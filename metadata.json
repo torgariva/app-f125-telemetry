@@ -1,0 +1,5 @@
+{
+  "name": "F1 25 Telemetry Analyzer",
+  "description": "Advanced telemetry analysis dashboard for F1 25 with lap times, tyre degradation, and setup management.",
+  "requestFramePermissions": []
+}
