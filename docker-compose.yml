@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: f1_backend
+    ports:
+      - "8000:8000"           # API FastAPI
+      - "20777:20777/udp"     # Puerto UDP para el juego F1 25
+    volumes:
+      - ./backend/data:/app/data  # Persistencia de la base de datos SQLite
+    restart: unless-stopped
+
+  frontend:
+    build: .
+    container_name: f1_frontend
+    ports:
+      - "3000:3000"           # Dashboard Web
+    restart: unless-stopped
+    depends_on:
+      - backend
