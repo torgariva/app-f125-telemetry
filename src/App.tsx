@@ -3,10 +3,12 @@ import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'reac
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Activity, Timer, Settings, TrendingDown, BarChart3, ChevronLeft, MapPin, Flag, Calendar, Clock, CloudRain, Sun, Database } from 'lucide-react';
 
-// Empty states for real implementation
-const mockLaps: any[] = [];
-const mockSetup: any = null;
-const mockSessions: Record<string, any[]> = {};
+// API Configuration
+// In production, this should point to your Proxmox IP (e.g., http://192.168.1.100:8000)
+// For local development, we use the relative path which Vite proxies, or fallback to localhost
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:8000' 
+  : `http://${window.location.hostname}:8000`;
 
 const tracks = [
   { id: 'bahrain', country: 'Bahrain', name: 'Bahrain International Circuit', round: 1 },
@@ -37,6 +39,12 @@ const tracks = [
 
 function Home() {
   const navigate = useNavigate();
+  const [sessionCounts, setSessionCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    // In a real app, you might have an endpoint like /api/sessions/summary
+    // For now, we'll just show 0 until the backend is fully implemented
+  }, []);
 
   return (
     <div className="min-h-screen p-6 max-w-7xl mx-auto">
@@ -50,7 +58,7 @@ function Home() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {tracks.map((track) => {
-          const sessionCount = mockSessions[track.id] ? mockSessions[track.id].length : 0;
+          const count = sessionCounts[track.id] || 0;
           
           return (
             <div 
@@ -67,8 +75,8 @@ function Home() {
               
               <div className="mt-4 pt-4 border-t border-[#333] flex justify-between items-center">
                 <span className="text-xs text-gray-500 uppercase">Sessions</span>
-                <span className={`text-sm font-mono font-bold ${sessionCount > 0 ? 'text-white' : 'text-gray-600'}`}>
-                  {sessionCount}
+                <span className={`text-sm font-mono font-bold ${count > 0 ? 'text-white' : 'text-gray-600'}`}>
+                  {count}
                 </span>
               </div>
             </div>
@@ -83,7 +91,28 @@ function TrackSessions() {
   const { trackId } = useParams();
   const navigate = useNavigate();
   const track = tracks.find(t => t.id === trackId) || tracks[15];
-  const sessions = mockSessions[trackId || ''] || [];
+  
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`${API_BASE_URL}/api/sessions/${trackId}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+      })
+      .then(data => {
+        setSessions(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching sessions:", err);
+        setError("Could not connect to the telemetry backend.");
+        setLoading(false);
+      });
+  }, [trackId]);
 
   return (
     <div className="min-h-screen p-6 max-w-7xl mx-auto">
@@ -104,7 +133,15 @@ function TrackSessions() {
         </div>
       </header>
 
-      {sessions.length === 0 ? (
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <Activity className="text-[#FF1801] animate-pulse" size={48} />
+        </div>
+      ) : error ? (
+        <div className="bg-red-900/20 border border-red-500/50 text-red-400 p-4 rounded-lg">
+          {error} Make sure your backend container is running.
+        </div>
+      ) : sessions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 bg-[#242424] border border-[#333] rounded-xl border-dashed">
           <Database size={48} className="text-gray-600 mb-4" />
           <h2 className="text-xl font-bold text-white mb-2">No sessions recorded yet</h2>
@@ -165,10 +202,38 @@ function TrackSessions() {
 function SessionDashboard() {
   const { trackId, sessionId } = useParams();
   const track = tracks.find(t => t.id === trackId) || tracks[15];
-  const sessions = mockSessions[trackId || ''] || [];
-  const session = sessions.find(s => s.id === sessionId);
+  
+  const [session, setSession] = useState<any>(null);
+  const [laps, setLaps] = useState<any[]>([]);
+  const [setup, setSetup] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!session) {
+  useEffect(() => {
+    // In a real app, you'd fetch the specific session details, laps, and setup
+    // For now, we'll try to fetch laps and handle the empty response
+    setLoading(true);
+    fetch(`${API_BASE_URL}/api/laps/${sessionId}`)
+      .then(res => res.json())
+      .then(data => {
+        setLaps(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching laps:", err);
+        setLoading(false);
+      });
+  }, [sessionId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen p-6 max-w-7xl mx-auto flex flex-col items-center justify-center">
+        <Activity size={48} className="text-[#FF1801] animate-pulse mb-4" />
+        <h2 className="text-xl font-bold text-white mb-2">Loading Telemetry...</h2>
+      </div>
+    );
+  }
+
+  if (!session && laps.length === 0) {
     return (
       <div className="min-h-screen p-6 max-w-7xl mx-auto flex flex-col items-center justify-center">
         <Activity size={48} className="text-[#FF1801] animate-pulse mb-4" />
@@ -188,12 +253,12 @@ function SessionDashboard() {
               <ChevronLeft size={20} />
             </Link>
             <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-              {track.country} - {session.type}
+              {track.country} - {session?.type || 'Session'}
             </h1>
           </div>
           <p className="text-gray-400 mt-1 font-mono text-sm flex items-center gap-2">
             <Calendar size={14} className="text-[#FF1801]" />
-            {session.date} | PORT: 20777 | STATUS: OFFLINE (SAVED)
+            {session?.date || 'Unknown Date'} | PORT: 20777 | STATUS: OFFLINE (SAVED)
           </p>
         </div>
         <div className="flex gap-4">
@@ -203,7 +268,7 @@ function SessionDashboard() {
           </div>
           <div className="bg-[#242424] border border-[#333] rounded-lg px-4 py-2 flex flex-col items-end">
             <span className="text-xs text-gray-400 uppercase tracking-wider">Best Lap</span>
-            <span className="font-mono text-xl font-bold text-white">{session.bestLap || '--:--.---'}</span>
+            <span className="font-mono text-xl font-bold text-white">{session?.bestLap || '--:--.---'}</span>
           </div>
         </div>
       </header>
@@ -229,10 +294,10 @@ function SessionDashboard() {
                   <span>Wear</span>
                 </div>
                 <div className="max-h-[300px] overflow-y-auto">
-                  {mockLaps.length === 0 ? (
+                  {laps.length === 0 ? (
                     <div className="p-8 text-center text-gray-500 font-mono text-sm">No laps recorded in this session yet.</div>
                   ) : (
-                    mockLaps.map((lap) => (
+                    laps.map((lap) => (
                       <div key={lap.lap} className="data-row">
                         <span className="data-value text-gray-400">{lap.lap}</span>
                         <span className={`data-value ${lap.s1 === 26.8 ? 'text-purple-400' : lap.s1 < 27.0 ? 'text-green-400' : ''}`}>{lap.s1.toFixed(3)}</span>
@@ -260,11 +325,11 @@ function SessionDashboard() {
               <h2 className="widget-title">Tyre Degradation & Pace</h2>
             </div>
             <div className="p-4 h-[300px] flex items-center justify-center">
-              {mockLaps.length === 0 ? (
+              {laps.length === 0 ? (
                 <span className="text-gray-500 font-mono text-sm">Not enough data for chart</span>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockLaps.filter(l => l.lap !== 8)}>
+                  <LineChart data={laps.filter(l => l.lap !== 8)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                     <XAxis dataKey="wear" stroke="#888" label={{ value: 'Tyre Wear (%)', position: 'insideBottom', offset: -5, fill: '#888' }} />
                     <YAxis domain={['dataMin - 0.5', 'dataMax + 0.5']} stroke="#888" label={{ value: 'Lap Time (s)', angle: -90, position: 'insideLeft', fill: '#888' }} />
@@ -290,7 +355,7 @@ function SessionDashboard() {
               <h2 className="widget-title">Active Setup ({track.country})</h2>
             </div>
             <div className="p-4 space-y-4">
-              {!mockSetup ? (
+              {!setup ? (
                 <div className="text-center text-gray-500 font-mono text-sm py-8">Setup data not available</div>
               ) : (
                 <>
@@ -299,11 +364,11 @@ function SessionDashboard() {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
                         <span className="text-xs text-gray-400">Front Wing</span>
-                        <span className="font-mono font-bold">{mockSetup.aerodynamics.frontWing}</span>
+                        <span className="font-mono font-bold">{setup.aerodynamics.frontWing}</span>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
                         <span className="text-xs text-gray-400">Rear Wing</span>
-                        <span className="font-mono font-bold">{mockSetup.aerodynamics.rearWing}</span>
+                        <span className="font-mono font-bold">{setup.aerodynamics.rearWing}</span>
                       </div>
                     </div>
                   </div>
@@ -313,11 +378,11 @@ function SessionDashboard() {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
                         <span className="text-xs text-gray-400">Diff On</span>
-                        <span className="font-mono font-bold">{mockSetup.transmission.diffOn}%</span>
+                        <span className="font-mono font-bold">{setup.transmission.diffOn}%</span>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
                         <span className="text-xs text-gray-400">Diff Off</span>
-                        <span className="font-mono font-bold">{mockSetup.transmission.diffOff}%</span>
+                        <span className="font-mono font-bold">{setup.transmission.diffOff}%</span>
                       </div>
                     </div>
                   </div>
@@ -327,19 +392,19 @@ function SessionDashboard() {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
                         <span className="text-xs text-gray-400">F. Susp</span>
-                        <span className="font-mono font-bold">{mockSetup.suspension.frontSusp}</span>
+                        <span className="font-mono font-bold">{setup.suspension.frontSusp}</span>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
                         <span className="text-xs text-gray-400">R. Susp</span>
-                        <span className="font-mono font-bold">{mockSetup.suspension.rearSusp}</span>
+                        <span className="font-mono font-bold">{setup.suspension.rearSusp}</span>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
                         <span className="text-xs text-gray-400">F. Ride</span>
-                        <span className="font-mono font-bold">{mockSetup.suspension.frontRide}</span>
+                        <span className="font-mono font-bold">{setup.suspension.frontRide}</span>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
                         <span className="text-xs text-gray-400">R. Ride</span>
-                        <span className="font-mono font-bold">{mockSetup.suspension.rearRide}</span>
+                        <span className="font-mono font-bold">{setup.suspension.rearRide}</span>
                       </div>
                     </div>
                   </div>
@@ -354,7 +419,7 @@ function SessionDashboard() {
               <h2 className="widget-title">Pace Consistency</h2>
             </div>
             <div className="p-4">
-              {mockLaps.length === 0 ? (
+              {laps.length === 0 ? (
                 <div className="text-center text-gray-500 font-mono text-sm py-8">Not enough data</div>
               ) : (
                 <>
@@ -364,7 +429,7 @@ function SessionDashboard() {
                   </div>
                   <div className="h-[150px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={mockLaps.filter(l => l.compound === 'Soft')}>
+                      <BarChart data={laps.filter(l => l.compound === 'Soft')}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                         <XAxis dataKey="lap" stroke="#888" tick={{fontSize: 10}} />
                         <YAxis domain={[79, 82]} stroke="#888" tick={{fontSize: 10}} />
