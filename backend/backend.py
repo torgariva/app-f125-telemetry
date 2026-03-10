@@ -271,8 +271,13 @@ def udp_listener():
 
             # ── Packet ID 2: Lap Data ─────────────────────────────────────
             if packet_id == 2:
+                # ADDED FOR DEBUGGING
+                if last_lap_num % 100 == 0: # just to not spam too much, or actually spam once per second based on logic
+                    log.info(f"Packet 2 received! len(data) = {len(data)}")
+                
                 offset = HEADER_SIZE + (player_car_idx * LAP_DATA_SIZE)
                 if len(data) < offset + LAP_DATA_SIZE:
+                    log.error(f"PACKET 2 SKIPPED! len={len(data)}, required={offset + LAP_DATA_SIZE}")
                     continue
 
                 last_lap_time_ms = struct.unpack_from('<I', data, offset + 0)[0]
