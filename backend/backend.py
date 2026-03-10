@@ -111,14 +111,30 @@ def udp_listener():
                     s1_time = sector1_ms / 1000.0
                     s2_time = sector2_ms / 1000.0
                 else:
-                    lap_size = 57 # F1 24/25 LapData size is 57 bytes per car
+                    # F1 24/25
+                    lap_size = (len(data) - 29) // 22
                     lap_data_offset = 29 + (player_car_index * lap_size)
+                    
                     last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
                     sector1_ms = struct.unpack_from('<H', data, lap_data_offset + 8)[0]
                     sector1_min = struct.unpack_from('<B', data, lap_data_offset + 10)[0]
                     sector2_ms = struct.unpack_from('<H', data, lap_data_offset + 11)[0]
                     sector2_min = struct.unpack_from('<B', data, lap_data_offset + 13)[0]
+                    
+                    # Try to find current_lap_num dynamically or assume 31
                     current_lap_num = struct.unpack_from('<B', data, lap_data_offset + 31)[0]
+                    
+                    # Print debug info once per session or lap
+                    if current_lap_num not in session_state:
+                        print(f"[DEBUG] Packet 2 length: {len(data)}, calculated lap_size: {lap_size}")
+                    
+                    if current_lap_num > 150: # Invalid lap number, probably wrong offset
+                        # Let's search for the lap number (usually 1, 2, 3...)
+                        # Just print the bytes to log
+                        if current_lap_num not in session_state:
+                            bytes_str = " ".join([f"{b:02x}" for b in data[lap_data_offset:lap_data_offset+lap_size]])
+                            print(f"[DEBUG] Wrong lap num {current_lap_num}. Bytes: {bytes_str}")
+                    
                     s1_time = sector1_min * 60 + sector1_ms / 1000.0
                     s2_time = sector2_min * 60 + sector2_ms / 1000.0
 
