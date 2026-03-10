@@ -65,7 +65,8 @@ def udp_listener():
 
             # Packet ID 1: Session Data
             if packet_id == 1:
-                track_id_int = struct.unpack_from('<b', data, 36)[0]
+                # En F1 24/25, el trackId está en el byte 30 (después del header de 29 bytes + 1 byte de weather)
+                track_id_int = struct.unpack_from('<b', data, 30)[0]
                 current_track_id = TRACK_MAP.get(track_id_int, 'bahrain')
 
             # Inicializar nueva sesión en BD
