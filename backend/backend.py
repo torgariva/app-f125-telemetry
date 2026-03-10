@@ -458,6 +458,25 @@ def delete_session(session_id: str):
     return {"status": "success"}
 
 
+@app.get("/api/debug/sessions")
+def debug_sessions():
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("SELECT * FROM sessions ORDER BY date DESC LIMIT 50")
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+@app.get("/api/debug/laps")
+def debug_laps():
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("SELECT * FROM laps ORDER BY id DESC LIMIT 100")
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
