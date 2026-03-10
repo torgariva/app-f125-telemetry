@@ -243,19 +243,35 @@ function SessionDashboard() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_BASE_URL}/api/laps/${sessionId}`)
-      .then(res => res.json())
-      .then(data => {
-        setLaps(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching laps:", err);
-        setLoading(false);
-      });
+    
+    const fetchData = () => {
+      // Fetch session details
+      fetch(`${API_BASE_URL}/api/sessions/single/${sessionId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) setSession(data);
+        })
+        .catch(err => console.error("Error fetching session:", err));
+
+      // Fetch laps
+      fetch(`${API_BASE_URL}/api/laps/${sessionId}`)
+        .then(res => res.json())
+        .then(data => {
+          setLaps(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error("Error fetching laps:", err);
+          setLoading(false);
+        });
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 2000);
+    return () => clearInterval(interval);
   }, [sessionId]);
 
-  if (loading) {
+  if (loading && !session && laps.length === 0) {
     return (
       <div className="min-h-screen p-6 max-w-7xl mx-auto flex flex-col items-center justify-center">
         <Activity size={48} className="text-[#FF1801] animate-pulse mb-4" />
@@ -264,7 +280,7 @@ function SessionDashboard() {
     );
   }
 
-  if (!session && laps.length === 0) {
+  if (!session && !loading) {
     return (
       <div className="min-h-screen p-6 max-w-7xl mx-auto flex flex-col items-center justify-center">
         <Activity size={48} className="text-[#FF1801] animate-pulse mb-4" />

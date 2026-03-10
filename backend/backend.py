@@ -208,6 +208,27 @@ def get_sessions(track_id: str):
         })
     return result
 
+@app.get("/api/sessions/single/{session_id}")
+def get_session(session_id: str):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
+    row = c.fetchone()
+    conn.close()
+    
+    if row:
+        return {
+            "id": row["id"],
+            "track_id": row["track_id"],
+            "type": row["type"],
+            "date": row["date"],
+            "bestLap": row["best_lap"],
+            "laps": row["total_laps"],
+            "condition": row["condition"]
+        }
+    return {"error": "Session not found"}
+
 @app.get("/api/laps/{session_id}")
 def get_laps(session_id: str):
     conn = sqlite3.connect(DB_PATH)
