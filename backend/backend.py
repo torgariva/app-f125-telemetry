@@ -209,13 +209,19 @@ def udp_listener():
 
             # ── Packet ID 1: Session Data ──────────────────────────────────
             if packet_id == 1:
-                if len(data) < HEADER_SIZE + 14:
+                if len(data) < HEADER_SIZE + 8:
                     continue
-                # Offsets relative to end of header:
-                # +0 = weather (uint8), +9 = sessionType (uint8), +5 = trackId (int8)
+                # Offsets relative to end of header (F1 23/24/25 typical structure):
+                # +0 = weather (uint8)
+                # +1 = trackTemp (int8)
+                # +2 = airTemp (int8)
+                # +3 = totalLaps (uint8)
+                # +4 = trackLength (uint16)
+                # +6 = sessionType (uint8)
+                # +7 = trackId (int8)
                 weather_id    = struct.unpack_from('<B', data, HEADER_SIZE + 0)[0]
-                track_id_int  = struct.unpack_from('<b', data, HEADER_SIZE + 5)[0]
-                session_type  = struct.unpack_from('<B', data, HEADER_SIZE + 9)[0]
+                session_type  = struct.unpack_from('<B', data, HEADER_SIZE + 6)[0]
+                track_id_int  = struct.unpack_from('<b', data, HEADER_SIZE + 7)[0]
 
                 current_track_id  = TRACK_MAP.get(track_id_int, 'bahrain')
                 session_type_str  = SESSION_TYPE_MAP.get(session_type, 'Unknown')
