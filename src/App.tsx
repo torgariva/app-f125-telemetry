@@ -42,8 +42,17 @@ function Home() {
   const [sessionCounts, setSessionCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    // In a real app, you might have an endpoint like /api/sessions/summary
-    // For now, we'll just show 0 until the backend is fully implemented
+    fetch(`${API_BASE_URL}/api/sessions/summary`)
+      .then(res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+      })
+      .then(data => {
+        setSessionCounts(data);
+      })
+      .catch(err => {
+        console.error("Error fetching session summary:", err);
+      });
   }, []);
 
   return (
@@ -230,12 +239,9 @@ function SessionDashboard() {
   
   const [session, setSession] = useState<any>(null);
   const [laps, setLaps] = useState<any[]>([]);
-  const [setup, setSetup] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, you'd fetch the specific session details, laps, and setup
-    // For now, we'll try to fetch laps and handle the empty response
     setLoading(true);
     fetch(`${API_BASE_URL}/api/laps/${sessionId}`)
       .then(res => res.json())
@@ -269,8 +275,39 @@ function SessionDashboard() {
     );
   }
 
+  // Calculate Stats
+  let bestS1 = { val: Infinity, lap: '-' };
+  let bestS2 = { val: Infinity, lap: '-' };
+  let bestS3 = { val: Infinity, lap: '-' };
+  let bestLap = { val: Infinity, lap: '-' };
+  let totalTime = 0;
+  let validLapsCount = 0;
+
+  laps.forEach(l => {
+    if (l.s1 > 0 && l.s1 < bestS1.val) bestS1 = { val: l.s1, lap: l.lap };
+    if (l.s2 > 0 && l.s2 < bestS2.val) bestS2 = { val: l.s2, lap: l.lap };
+    if (l.s3 > 0 && l.s3 < bestS3.val) bestS3 = { val: l.s3, lap: l.lap };
+    if (l.total > 0 && l.total < bestLap.val) bestLap = { val: l.total, lap: l.lap };
+    if (l.total > 0) {
+      totalTime += l.total;
+      validLapsCount++;
+    }
+  });
+
+  const idealLap = (bestS1.val !== Infinity ? bestS1.val : 0) + 
+                   (bestS2.val !== Infinity ? bestS2.val : 0) + 
+                   (bestS3.val !== Infinity ? bestS3.val : 0);
+  const avgLap = validLapsCount > 0 ? totalTime / validLapsCount : 0;
+
+  const formatTime = (sec: number) => {
+    if (!sec || sec <= 0 || sec === Infinity) return '---';
+    const m = Math.floor(sec / 60);
+    const s = (sec % 60).toFixed(3).padStart(6, '0');
+    return m > 0 ? `${m}:${s}` : s;
+  };
+
   return (
-    <div className="min-h-screen p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen p-6 max-w-5xl mx-auto">
       <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-4 mb-2">
@@ -278,206 +315,122 @@ function SessionDashboard() {
               <ChevronLeft size={20} />
             </Link>
             <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-              {track.country} - {session?.type || 'Session'}
+              Detailed Session History
             </h1>
           </div>
-          <p className="text-gray-400 mt-1 font-mono text-sm flex items-center gap-2">
-            <Calendar size={14} className="text-[#FF1801]" />
-            {session?.date || 'Unknown Date'} | PORT: 20777 | STATUS: OFFLINE (SAVED)
+          <p className="text-yellow-500 mt-1 font-mono text-sm flex items-center gap-2">
+            {track.name} | PORT: 20777
           </p>
-        </div>
-        <div className="flex gap-4">
-          <div className="bg-[#242424] border border-[#333] rounded-lg px-4 py-2 flex flex-col items-end">
-            <span className="text-xs text-gray-400 uppercase tracking-wider">Ideal Lap</span>
-            <span className="font-mono text-xl font-bold text-[#FF1801]">--:--.---</span>
-          </div>
-          <div className="bg-[#242424] border border-[#333] rounded-lg px-4 py-2 flex flex-col items-end">
-            <span className="text-xs text-gray-400 uppercase tracking-wider">Best Lap</span>
-            <span className="font-mono text-xl font-bold text-white">{session?.bestLap || '--:--.---'}</span>
-          </div>
         </div>
       </header>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="space-y-6">
         
-        {/* Left Column: Laps & Sectors */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="widget-container">
-            <div className="widget-header">
-              <Timer size={18} className="text-[#FF1801]" />
-              <h2 className="widget-title">Lap Times & Sectors</h2>
-            </div>
-            <div className="p-0 overflow-x-auto">
-              <div className="min-w-[600px]">
-                <div className="col-header">
-                  <span>Lap</span>
-                  <span>Sector 1</span>
-                  <span>Sector 2</span>
-                  <span>Sector 3</span>
-                  <span>Total</span>
-                  <span>Tyre</span>
-                  <span>Wear</span>
-                </div>
-                <div className="max-h-[300px] overflow-y-auto">
-                  {laps.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500 font-mono text-sm">No laps recorded in this session yet.</div>
-                  ) : (
-                    laps.map((lap) => (
-                      <div key={lap.lap} className="data-row">
-                        <span className="data-value text-gray-400">{lap.lap}</span>
-                        <span className={`data-value ${lap.s1 > 0 && lap.s1 < 27.0 ? 'text-green-400' : ''}`}>
+        {/* Telemetry Table */}
+        <div className="bg-[#111] border border-[#333] rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse font-mono text-sm">
+              <thead>
+                <tr className="text-yellow-500 border-b border-[#333] bg-[#1a1a1a]">
+                  <th className="py-3 px-6 font-normal">LAP</th>
+                  <th className="py-3 px-6 font-normal">LAPTIME</th>
+                  <th className="py-3 px-6 font-normal">S1</th>
+                  <th className="py-3 px-6 font-normal">S2</th>
+                  <th className="py-3 px-6 font-normal">S3</th>
+                  <th className="py-3 px-6 font-normal">TYRE</th>
+                  <th className="py-3 px-6 font-normal">PIT</th>
+                </tr>
+              </thead>
+              <tbody>
+                {laps.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-gray-500">No laps recorded yet.</td>
+                  </tr>
+                ) : (
+                  laps.map((lap, i) => {
+                    const isBestLap = lap.total === bestLap.val;
+                    const isBestS1 = lap.s1 === bestS1.val;
+                    const isBestS2 = lap.s2 === bestS2.val;
+                    const isBestS3 = lap.s3 === bestS3.val;
+                    
+                    return (
+                      <tr key={lap.lap} className="border-b border-[#222] hover:bg-[#2a2a2a] transition-colors">
+                        <td className="py-2 px-6 text-gray-400">L{lap.lap}</td>
+                        <td className={`py-2 px-6 ${isBestLap ? 'text-purple-400 font-bold' : 'text-white'}`}>
+                          {formatTime(lap.total)}
+                        </td>
+                        <td className={`py-2 px-6 ${isBestS1 ? 'text-purple-400' : lap.s1 > 0 ? 'text-green-400' : 'text-gray-600'}`}>
                           {lap.s1 > 0 ? lap.s1.toFixed(3) : '---'}
-                        </span>
-                        <span className={`data-value ${lap.s2 > 0 && lap.s2 < 27.0 ? 'text-green-400' : ''}`}>
+                        </td>
+                        <td className={`py-2 px-6 ${isBestS2 ? 'text-purple-400' : lap.s2 > 0 ? 'text-green-400' : 'text-gray-600'}`}>
                           {lap.s2 > 0 ? lap.s2.toFixed(3) : '---'}
-                        </span>
-                        <span className={`data-value ${lap.s3 > 0 && lap.s3 < 27.0 ? 'text-green-400' : ''}`}>
+                        </td>
+                        <td className={`py-2 px-6 ${isBestS3 ? 'text-purple-400' : lap.s3 > 0 ? 'text-green-400' : 'text-gray-600'}`}>
                           {lap.s3 > 0 ? lap.s3.toFixed(3) : '---'}
-                        </span>
-                        <span className={`data-value font-bold ${lap.total < 80.0 ? 'text-green-400' : ''}`}>
-                          {lap.lap === 8 ? 'PIT' : `1:${(lap.total - 60).toFixed(3)}`}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${lap.compound === 'Soft' ? 'bg-red-500' : 'bg-yellow-400'}`} />
-                          <span className="text-xs uppercase">{lap.compound}</span>
-                        </span>
-                        <span className="data-value">{lap.wear}%</span>
-                      </div>
-                    ))
-                  )}
+                        </td>
+                        <td className="py-2 px-6 text-gray-400 text-xs uppercase">{lap.compound}</td>
+                        <td className="py-2 px-6 text-gray-500">{i === 0 ? 'out' : ''}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Summary Block */}
+        {laps.length > 0 && (
+          <div className="bg-[#111] border border-[#333] rounded-xl p-6 font-mono text-sm space-y-6">
+            
+            {/* Averages */}
+            <div className="text-gray-300 border-b border-[#333] pb-4">
+              <span className="text-yellow-500">All laps avg:</span> {formatTime(avgLap)} 
+              <span className="text-gray-600 mx-4">|</span> 
+              <span className="text-yellow-500">Total time driven:</span> {formatTime(totalTime)}
+            </div>
+
+            {/* Best Sectors */}
+            <div className="border-b border-[#333] pb-4">
+              <div className="text-yellow-500 mb-3">Driver best sectors:</div>
+              <div className="grid grid-cols-3 gap-4 text-gray-300 max-w-md">
+                <div>
+                  <span className="text-gray-500 mr-2">S1</span> 
+                  <span className="text-yellow-600 mr-2">L{bestS1.lap}</span> 
+                  <span className="text-white font-bold">{bestS1.val !== Infinity ? bestS1.val.toFixed(3) : '---'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 mr-2">S2</span> 
+                  <span className="text-yellow-600 mr-2">L{bestS2.lap}</span> 
+                  <span className="text-white font-bold">{bestS2.val !== Infinity ? bestS2.val.toFixed(3) : '---'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 mr-2">S3</span> 
+                  <span className="text-yellow-600 mr-2">L{bestS3.lap}</span> 
+                  <span className="text-white font-bold">{bestS3.val !== Infinity ? bestS3.val.toFixed(3) : '---'}</span>
                 </div>
               </div>
             </div>
+
+            {/* Session Best Times */}
+            <div>
+              <div className="text-yellow-500 mb-3">Session best times, time/lap</div>
+              <div className="flex flex-wrap gap-12 text-gray-300">
+                <div>
+                  <span className="text-gray-500 block mb-1">LAPTIME</span> 
+                  <span className="text-white font-bold text-lg">{formatTime(bestLap.val)}</span> 
+                  <span className="text-yellow-600 ml-2">L{bestLap.lap}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block mb-1">IDEAL LAP</span> 
+                  <span className="text-purple-400 font-bold text-lg">{formatTime(idealLap)}</span>
+                </div>
+              </div>
+            </div>
+
           </div>
+        )}
 
-          <div className="widget-container">
-            <div className="widget-header">
-              <TrendingDown size={18} className="text-[#FF1801]" />
-              <h2 className="widget-title">Tyre Degradation & Pace</h2>
-            </div>
-            <div className="p-4 h-[300px] flex items-center justify-center">
-              {laps.length === 0 ? (
-                <span className="text-gray-500 font-mono text-sm">Not enough data for chart</span>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={laps.filter(l => l.lap !== 8)}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis dataKey="wear" stroke="#888" label={{ value: 'Tyre Wear (%)', position: 'insideBottom', offset: -5, fill: '#888' }} />
-                    <YAxis domain={['dataMin - 0.5', 'dataMax + 0.5']} stroke="#888" label={{ value: 'Lap Time (s)', angle: -90, position: 'insideLeft', fill: '#888' }} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333', fontFamily: 'JetBrains Mono' }}
-                      formatter={(value: number) => [value.toFixed(3) + 's', 'Lap Time']}
-                      labelFormatter={(label) => `Wear: ${label}%`}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="total" stroke="#FF1801" strokeWidth={2} dot={{ r: 4, fill: '#1A1A1A', strokeWidth: 2 }} name="Pace vs Wear" />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Setup & Consistency */}
-        <div className="space-y-6">
-          <div className="widget-container">
-            <div className="widget-header">
-              <Settings size={18} className="text-[#FF1801]" />
-              <h2 className="widget-title">Active Setup ({track.country})</h2>
-            </div>
-            <div className="p-4 space-y-4">
-              {!setup ? (
-                <div className="text-center text-gray-500 font-mono text-sm py-8">Setup data not available</div>
-              ) : (
-                <>
-                  <div>
-                    <h3 className="text-xs text-gray-400 uppercase mb-2 font-semibold">Aerodynamics</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
-                        <span className="text-xs text-gray-400">Front Wing</span>
-                        <span className="font-mono font-bold">{setup.aerodynamics.frontWing}</span>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
-                        <span className="text-xs text-gray-400">Rear Wing</span>
-                        <span className="font-mono font-bold">{setup.aerodynamics.rearWing}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xs text-gray-400 uppercase mb-2 font-semibold">Transmission</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
-                        <span className="text-xs text-gray-400">Diff On</span>
-                        <span className="font-mono font-bold">{setup.transmission.diffOn}%</span>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
-                        <span className="text-xs text-gray-400">Diff Off</span>
-                        <span className="font-mono font-bold">{setup.transmission.diffOff}%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xs text-gray-400 uppercase mb-2 font-semibold">Suspension</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
-                        <span className="text-xs text-gray-400">F. Susp</span>
-                        <span className="font-mono font-bold">{setup.suspension.frontSusp}</span>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
-                        <span className="text-xs text-gray-400">R. Susp</span>
-                        <span className="font-mono font-bold">{setup.suspension.rearSusp}</span>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
-                        <span className="text-xs text-gray-400">F. Ride</span>
-                        <span className="font-mono font-bold">{setup.suspension.frontRide}</span>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded border border-[#333] flex justify-between items-center">
-                        <span className="text-xs text-gray-400">R. Ride</span>
-                        <span className="font-mono font-bold">{setup.suspension.rearRide}</span>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="widget-container">
-            <div className="widget-header">
-              <BarChart3 size={18} className="text-[#FF1801]" />
-              <h2 className="widget-title">Pace Consistency</h2>
-            </div>
-            <div className="p-4">
-              {laps.length === 0 ? (
-                <div className="text-center text-gray-500 font-mono text-sm py-8">Not enough data</div>
-              ) : (
-                <>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-sm text-gray-400">Std Deviation (Softs)</span>
-                    <span className="font-mono font-bold text-green-400">±0.42s</span>
-                  </div>
-                  <div className="h-[150px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={laps.filter(l => l.compound === 'Soft')}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                        <XAxis dataKey="lap" stroke="#888" tick={{fontSize: 10}} />
-                        <YAxis domain={[79, 82]} stroke="#888" tick={{fontSize: 10}} />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333', fontFamily: 'JetBrains Mono' }}
-                          formatter={(value: number) => [value.toFixed(3) + 's', 'Lap Time']}
-                        />
-                        <Bar dataKey="total" fill="#FF1801" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-        </div>
       </div>
     </div>
   );

@@ -65,9 +65,16 @@ def udp_listener():
 
             # Packet ID 1: Session Data
             if packet_id == 1:
-                # En F1 24/25, el trackId está en el byte 30 (después del header de 29 bytes + 1 byte de weather)
-                track_id_int = struct.unpack_from('<b', data, 30)[0]
+                track_id_int = struct.unpack_from('<b', data, 36)[0]
                 current_track_id = TRACK_MAP.get(track_id_int, 'bahrain')
+                
+                # Actualizar la base de datos por si la sesión se creó antes de recibir este paquete
+                if current_session_uid:
+                    conn = sqlite3.connect(DB_PATH)
+                    c = conn.cursor()
+                    c.execute("UPDATE sessions SET track_id = ? WHERE id = ?", (current_track_id, current_session_uid))
+                    conn.commit()
+                    conn.close()
 
             # Inicializar nueva sesión en BD
             if session_uid != current_session_uid:
@@ -156,6 +163,19 @@ def udp_listener():
 def startup_event():
     init_db()
     threading.Thread(target=udp_listener, daemon=True).start()
+
+@app.get("/api/sessions/summary")
+def get_sessions_summary():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT track_id, COUNT(*) FROM sessions GROUP BY track_id")
+    rows = c.fetchall()
+    conn.close()
+    
+    result = {}
+    for r in rows:
+        result[r[0]] = r[1]
+    return result
 
 @app.get("/api/sessions/{track_id}")
 def get_sessions(track_id: str):
