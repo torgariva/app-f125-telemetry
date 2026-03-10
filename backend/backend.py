@@ -101,7 +101,7 @@ def udp_listener():
 
             # Packet ID 2: Lap Data
             if packet_id == 2:
-                lap_size = 53
+                lap_size = 57 # F1 24/25 LapData size is 57 bytes per car
                 lap_data_offset = 29 + (player_car_index * lap_size)
                 
                 last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
