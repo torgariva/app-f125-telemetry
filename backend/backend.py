@@ -272,7 +272,8 @@ def udp_listener():
             # ── Packet ID 2: Lap Data ─────────────────────────────────────
             if packet_id == 2:
                 offset = HEADER_SIZE + (player_car_idx * LAP_DATA_SIZE)
-                if len(data) < offset + LAP_DATA_SIZE:
+                # F1 25 PacketLapData size might be larger than expected due to trailing bytes
+                if len(data) < offset + 35: # Just check we have enough bytes for our specific offsets (max offset is 34)
                     continue
 
                 last_lap_time_ms = struct.unpack_from('<I', data, offset + 0)[0]
