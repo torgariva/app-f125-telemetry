@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Activity, Timer, Settings, TrendingDown, BarChart3, ChevronLeft, MapPin, Flag, Calendar, Clock, CloudRain, Sun, Database } from 'lucide-react';
+import { Activity, Timer, Settings, TrendingDown, BarChart3, ChevronLeft, MapPin, Flag, Calendar, Clock, CloudRain, Sun, Database, Trash2 } from 'lucide-react';
 
 // API Configuration
 // In production, this should point to your Proxmox IP (e.g., http://192.168.1.100:8000)
@@ -114,6 +114,22 @@ function TrackSessions() {
       });
   }, [trackId]);
 
+  const handleDelete = async (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this session?')) return;
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setSessions(sessions.filter(s => s.id !== sessionId));
+      }
+    } catch (err) {
+      console.error("Failed to delete session", err);
+    }
+  };
+
   return (
     <div className="min-h-screen p-6 max-w-7xl mx-auto">
       <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -155,7 +171,7 @@ function TrackSessions() {
             <div
               key={session.id}
               onClick={() => navigate(`/track/${track.id}/session/${session.id}`)}
-              className="bg-[#242424] border border-[#333] hover:border-[#FF1801] hover:bg-[#2a2a2a] transition-all p-5 rounded-xl cursor-pointer group"
+              className="bg-[#242424] border border-[#333] hover:border-[#FF1801] hover:bg-[#2a2a2a] transition-all p-5 rounded-xl cursor-pointer group relative"
             >
               <div className="flex justify-between items-start mb-4">
                 <span className={`text-sm font-bold text-white px-2 py-1 rounded ${
@@ -165,11 +181,20 @@ function TrackSessions() {
                 }`}>
                   {session.type}
                 </span>
-                {session.condition === 'Dry' ? (
-                  <Sun size={18} className="text-yellow-500" />
-                ) : (
-                  <CloudRain size={18} className="text-blue-400" />
-                )}
+                <div className="flex items-center gap-3">
+                  {session.condition === 'Dry' ? (
+                    <Sun size={18} className="text-yellow-500" />
+                  ) : (
+                    <CloudRain size={18} className="text-blue-400" />
+                  )}
+                  <button 
+                    onClick={(e) => handleDelete(e, session.id)} 
+                    className="text-gray-500 hover:text-red-500 transition-colors z-10"
+                    title="Delete Session"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-2 mb-4">
@@ -300,10 +325,16 @@ function SessionDashboard() {
                     laps.map((lap) => (
                       <div key={lap.lap} className="data-row">
                         <span className="data-value text-gray-400">{lap.lap}</span>
-                        <span className={`data-value ${lap.s1 === 26.8 ? 'text-purple-400' : lap.s1 < 27.0 ? 'text-green-400' : ''}`}>{lap.s1.toFixed(3)}</span>
-                        <span className={`data-value ${lap.s2 === 26.2 ? 'text-purple-400' : lap.s2 < 26.4 ? 'text-green-400' : ''}`}>{lap.s2.toFixed(3)}</span>
-                        <span className={`data-value ${lap.s3 === 26.4 ? 'text-purple-400' : lap.s3 < 26.6 ? 'text-green-400' : ''}`}>{lap.s3.toFixed(3)}</span>
-                        <span className={`data-value font-bold ${lap.total === 79.4 ? 'text-purple-400' : lap.total < 80.0 ? 'text-green-400' : ''}`}>
+                        <span className={`data-value ${lap.s1 > 0 && lap.s1 < 27.0 ? 'text-green-400' : ''}`}>
+                          {lap.s1 > 0 ? lap.s1.toFixed(3) : '---'}
+                        </span>
+                        <span className={`data-value ${lap.s2 > 0 && lap.s2 < 27.0 ? 'text-green-400' : ''}`}>
+                          {lap.s2 > 0 ? lap.s2.toFixed(3) : '---'}
+                        </span>
+                        <span className={`data-value ${lap.s3 > 0 && lap.s3 < 27.0 ? 'text-green-400' : ''}`}>
+                          {lap.s3 > 0 ? lap.s3.toFixed(3) : '---'}
+                        </span>
+                        <span className={`data-value font-bold ${lap.total < 80.0 ? 'text-green-400' : ''}`}>
                           {lap.lap === 8 ? 'PIT' : `1:${(lap.total - 60).toFixed(3)}`}
                         </span>
                         <span className="flex items-center gap-2">

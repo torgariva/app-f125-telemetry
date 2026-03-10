@@ -45,6 +45,7 @@ def udp_listener():
     current_session_uid = None
     current_track_id = 'bahrain'
     last_lap_num = 0
+    session_state = {} # lap_num -> {'s1': 0, 's2': 0}
 
     while True:
         try:
@@ -62,7 +63,7 @@ def udp_listener():
             if session_uid == "0":
                 continue # Menú principal
 
-            # Packet ID 1: Session Data (Para saber en qué circuito estamos)
+            # Packet ID 1: Session Data
             if packet_id == 1:
                 track_id_int = struct.unpack_from('<b', data, 36)[0]
                 current_track_id = TRACK_MAP.get(track_id_int, 'bahrain')
@@ -71,6 +72,7 @@ def udp_listener():
             if session_uid != current_session_uid:
                 current_session_uid = session_uid
                 last_lap_num = 0
+                session_state = {}
                 conn = sqlite3.connect(DB_PATH)
                 c = conn.cursor()
                 c.execute("INSERT OR IGNORE INTO sessions (id, track_id, date, type, best_lap, total_laps, condition) VALUES (?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)",
@@ -79,42 +81,50 @@ def udp_listener():
                 conn.close()
                 print(f"[*] Nueva sesión detectada: {session_uid} en {current_track_id}")
 
-            # Packet ID 2: Lap Data (Para guardar los tiempos de vuelta)
+            # Packet ID 2: Lap Data
             if packet_id == 2:
-                # Ajuste de offsets según la versión del juego (F1 23 vs F1 24/25)
-                if packet_format == 2023:
-                    lap_size = 50
-                    lap_num_offset = 35
-                else:
-                    # F1 24 y F1 25 usan 53 bytes por coche
-                    lap_size = 53
-                    lap_num_offset = 27
-
+                lap_size = 53
                 lap_data_offset = 29 + (player_car_index * lap_size)
                 
-                # Extraer tiempo de la última vuelta y número de vuelta actual
                 last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
-                current_lap_num = struct.unpack_from('<B', data, lap_data_offset + lap_num_offset)[0]
+                sector1_ms = struct.unpack_from('<H', data, lap_data_offset + 8)[0]
+                sector1_min = struct.unpack_from('<B', data, lap_data_offset + 10)[0]
+                sector2_ms = struct.unpack_from('<H', data, lap_data_offset + 11)[0]
+                sector2_min = struct.unpack_from('<B', data, lap_data_offset + 13)[0]
+                current_lap_num = struct.unpack_from('<B', data, lap_data_offset + 31)[0]
 
-                # Si el número de vuelta cambia, significa que hemos completado una vuelta
+                s1_time = sector1_min * 60 + sector1_ms / 1000.0
+                s2_time = sector2_min * 60 + sector2_ms / 1000.0
+
+                # Guardar los sectores mientras la vuelta está en progreso
+                if current_lap_num not in session_state:
+                    session_state[current_lap_num] = {'s1': 0, 's2': 0}
+                
+                if s1_time > 0:
+                    session_state[current_lap_num]['s1'] = s1_time
+                if s2_time > 0:
+                    session_state[current_lap_num]['s2'] = s2_time
+
+                # Si el número de vuelta cambia, hemos completado una vuelta
                 if current_lap_num > last_lap_num and last_lap_num > 0 and last_lap_time_ms > 0:
                     lap_time_sec = last_lap_time_ms / 1000.0
                     
-                    # Formatear tiempo (ej: 1:23.456)
+                    s1 = session_state.get(last_lap_num, {}).get('s1', 0)
+                    s2 = session_state.get(last_lap_num, {}).get('s2', 0)
+                    s3 = lap_time_sec - s1 - s2 if (s1 > 0 and s2 > 0) else 0
+                    
                     minutes = int(lap_time_sec // 60)
                     seconds = lap_time_sec % 60
                     lap_str = f"{minutes}:{seconds:06.3f}"
                     
-                    print(f"[*] Vuelta {last_lap_num} completada! Tiempo: {lap_str}")
+                    print(f"[*] Vuelta {last_lap_num} completada! Tiempo: {lap_str} (S1: {s1:.3f}, S2: {s2:.3f}, S3: {s3:.3f})")
                     
                     conn = sqlite3.connect(DB_PATH)
                     c = conn.cursor()
                     
-                    # Guardar la vuelta
                     c.execute("INSERT INTO laps (session_id, lap_number, s1, s2, s3, total, compound, wear) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                              (session_uid, last_lap_num, 0, 0, 0, lap_time_sec, 'Soft', 15.0))
+                              (session_uid, last_lap_num, s1, s2, s3, lap_time_sec, 'Soft', 15.0))
                     
-                    # Actualizar el mejor tiempo de la sesión
                     c.execute("SELECT best_lap FROM sessions WHERE id = ?", (session_uid,))
                     row = c.fetchone()
                     current_best = row[0] if row else '--:--.---'
@@ -139,7 +149,6 @@ def udp_listener():
                 last_lap_num = current_lap_num
 
         except Exception as e:
-            # Ignoramos errores de parseo de paquetes sueltos para no detener el servidor
             pass
 
 @app.on_event("startup")
@@ -189,6 +198,16 @@ def get_laps(session_id: str):
             "wear": r["wear"]
         })
     return result
+
+@app.delete("/api/sessions/{session_id}")
+def delete_session(session_id: str):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+    c.execute("DELETE FROM laps WHERE session_id = ?", (session_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
 
 if __name__ == "__main__":
     import uvicorn
