@@ -28,12 +28,20 @@ DB_PATH = "data/f1_telemetry.db"
 
 # Mapa de IDs de circuitos de F1 a los IDs de nuestro frontend
 TRACK_MAP = {
-    0: 'australia', 2: 'china', 3: 'bahrain', 4: 'spain', 5: 'monaco',
-    6: 'canada', 7: 'uk', 9: 'hungary', 10: 'belgium', 11: 'italy',
+    0: 'australia', 1: 'france', 2: 'china', 3: 'bahrain', 4: 'spain', 5: 'monaco',
+    6: 'canada', 7: 'uk', 8: 'germany', 9: 'hungary', 10: 'belgium', 11: 'italy',
     12: 'singapore', 13: 'japan', 14: 'abudhabi', 15: 'usa', 16: 'brazil', 
-    17: 'austria', 19: 'mexico', 20: 'azerbaijan', 26: 'imola', 27: 'saudi', 
-    28: 'miami', 29: 'vegas', 30: 'qatar', 31: 'imola'
+    17: 'austria', 18: 'russia', 19: 'mexico', 20: 'azerbaijan', 21: 'bahrain_short',
+    22: 'uk_short', 23: 'usa_short', 24: 'japan_short', 25: 'hanoi', 26: 'zandvoort',
+    27: 'imola', 28: 'portimao', 29: 'saudi', 30: 'miami', 31: 'vegas', 32: 'qatar'
 }
+
+# Tipos de neumáticos visuales (Packet 7)
+TYRE_MAP = {
+    16: 'Soft', 17: 'Medium', 18: 'Hard', 7: 'Inter', 8: 'Wet',
+    9: 'Dry', 10: 'Wet', 11: 'Super Soft', 12: 'Soft', 13: 'Medium', 14: 'Hard', 15: 'Wet'
+}
+
 
 def init_db():
     os.makedirs("data", exist_ok=True)
@@ -55,6 +63,9 @@ def udp_listener():
     current_track_id = 'bahrain'
     recorded_laps = set()
     session_state = {} # lap_num -> {'s1': 0, 's2': 0}
+    current_weather = 'Dry'
+    current_tyre = 'Soft'
+    current_tyre_wear = 0.0
 
     while True:
         try:
@@ -74,12 +85,19 @@ def udp_listener():
 
             # Packet ID 1: Session Data
             if packet_id == 1:
-                track_id_int = struct.unpack_from('<b', data, 36)[0]
-                current_track_id = TRACK_MAP.get(track_id_int, 'bahrain')
+                # Extraemos el clima del offset 29 (1 byte unsigned char)
+                weather_id = struct.unpack_from('<B', data, 29)[0]
+                if weather_id in [3, 4, 5]:  # 3=light rain, 4=heavy rain, 5=storm
+                    current_weather = 'Wet'
+                else:  # 0=clear, 1=light cloud, 2=overcast
+                    current_weather = 'Dry'
                 
-                # Actualizar la base de datos solo si el circuito cambia (evita 'database is locked')
-                if current_session_uid and current_track_id != TRACK_MAP.get(track_id_int):
-                    current_track_id = TRACK_MAP.get(track_id_int, f'unknown_{track_id_int}')
+                track_id_int = struct.unpack_from('<b', data, 36)[0]
+                new_track_id = TRACK_MAP.get(track_id_int, f'unknown_{track_id_int}')
+                
+                # Actualizar la base de datos solo si el circuito cambia
+                if current_session_uid and current_track_id != new_track_id:
+                    current_track_id = new_track_id
                     try:
                         conn = sqlite3.connect(DB_PATH)
                         c = conn.cursor()
@@ -89,7 +107,7 @@ def udp_listener():
                     except sqlite3.OperationalError:
                         pass # Ignore lock, we'll try later or next session update
                 else:
-                    current_track_id = TRACK_MAP.get(track_id_int, f'unknown_{track_id_int}')
+                    current_track_id = new_track_id
 
             # Inicializar nueva sesión en BD
             if session_uid != current_session_uid:
@@ -100,13 +118,37 @@ def udp_listener():
                 conn = sqlite3.connect(DB_PATH)
                 c = conn.cursor()
                 c.execute("INSERT OR IGNORE INTO sessions (id, track_id, date, type, best_lap, total_laps, condition) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                          (session_uid, current_track_id, current_time, 'Time Trial', '--:--.---', 0, 'Dry'))
+                          (session_uid, current_track_id, current_time, 'Time Trial', '--:--.---', 0, current_weather))
                 conn.commit()
                 conn.close()
-                print(f"[*] Nueva sesión detectada: {session_uid} en {current_track_id} a las {current_time}")
+                print(f"[*] Nueva sesión detectada: {session_uid} en {current_track_id} a las {current_time} con Clima: {current_weather}")
+
+            # Packet ID 7: Car Status
+            elif packet_id == 7:
+                try:
+                    # Dynamically calculate offset for status size
+                    status_size = (len(data) - 29) // 22
+                    status_data_offset = 29 + (player_car_index * status_size)
+                    
+                    visual_tyre_byte = struct.unpack_from('<B', data, status_data_offset + 31)[0]
+                    current_tyre = TYRE_MAP.get(visual_tyre_byte, f'C{visual_tyre_byte}')
+                except Exception as e:
+                    print(f"[!] Error extrayendo neumático en Packet 7: {e}")
+
+            # Packet ID 10: Car Damage
+            elif packet_id == 10:
+                try:
+                    damage_size = (len(data) - 29) // 22
+                    damage_data_offset = 29 + (player_car_index * damage_size)
+                    
+                    # Extract 4 floats (tyresWear[4])
+                    tyres_wear = struct.unpack_from('<ffff', data, damage_data_offset)
+                    current_tyre_wear = sum(tyres_wear) / 4.0
+                except Exception as e:
+                    print(f"[!] Error extrayendo desgaste en Packet 10: {e}")
 
             # Packet ID 2: Lap Data
-            if packet_id == 2:
+            elif packet_id == 2:
                 if packet_format == 2023:
                     lap_size = 43
                     lap_data_offset = 29 + (player_car_index * lap_size)
@@ -174,7 +216,7 @@ def udp_listener():
                                 c = conn.cursor()
                                 
                                 c.execute("INSERT INTO laps (session_id, lap_number, s1, s2, s3, total, compound, wear) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                                          (session_uid, lap_to_check, s1, s2, s3, lap_time_sec, 'Soft', 15.0))
+                                          (session_uid, lap_to_check, s1, s2, s3, lap_time_sec, current_tyre, round(current_tyre_wear, 2)))
                                 
                                 c.execute("SELECT best_lap FROM sessions WHERE id = ?", (session_uid,))
                                 row = c.fetchone()
