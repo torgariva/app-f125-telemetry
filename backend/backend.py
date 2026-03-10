@@ -103,20 +103,24 @@ def udp_listener():
             if packet_id == 2:
                 if packet_format == 2023:
                     lap_size = 43
+                    lap_data_offset = 29 + (player_car_index * lap_size)
+                    last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
+                    sector1_ms = struct.unpack_from('<H', data, lap_data_offset + 8)[0]
+                    sector2_ms = struct.unpack_from('<H', data, lap_data_offset + 10)[0]
+                    current_lap_num = struct.unpack_from('<B', data, lap_data_offset + 25)[0]
+                    s1_time = sector1_ms / 1000.0
+                    s2_time = sector2_ms / 1000.0
                 else:
                     lap_size = 57 # F1 24/25 LapData size is 57 bytes per car
-                
-                lap_data_offset = 29 + (player_car_index * lap_size)
-                
-                last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
-                sector1_ms = struct.unpack_from('<H', data, lap_data_offset + 8)[0]
-                sector1_min = struct.unpack_from('<B', data, lap_data_offset + 10)[0]
-                sector2_ms = struct.unpack_from('<H', data, lap_data_offset + 11)[0]
-                sector2_min = struct.unpack_from('<B', data, lap_data_offset + 13)[0]
-                current_lap_num = struct.unpack_from('<B', data, lap_data_offset + 31)[0]
-
-                s1_time = sector1_min * 60 + sector1_ms / 1000.0
-                s2_time = sector2_min * 60 + sector2_ms / 1000.0
+                    lap_data_offset = 29 + (player_car_index * lap_size)
+                    last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
+                    sector1_ms = struct.unpack_from('<H', data, lap_data_offset + 8)[0]
+                    sector1_min = struct.unpack_from('<B', data, lap_data_offset + 10)[0]
+                    sector2_ms = struct.unpack_from('<H', data, lap_data_offset + 11)[0]
+                    sector2_min = struct.unpack_from('<B', data, lap_data_offset + 13)[0]
+                    current_lap_num = struct.unpack_from('<B', data, lap_data_offset + 31)[0]
+                    s1_time = sector1_min * 60 + sector1_ms / 1000.0
+                    s2_time = sector2_min * 60 + sector2_ms / 1000.0
 
                 # Guardar los sectores mientras la vuelta está en progreso
                 if current_lap_num not in session_state:
