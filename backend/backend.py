@@ -271,13 +271,8 @@ def udp_listener():
 
             # ── Packet ID 2: Lap Data ─────────────────────────────────────
             if packet_id == 2:
-                # ADDED FOR DEBUGGING
-                if last_lap_num % 100 == 0: # just to not spam too much, or actually spam once per second based on logic
-                    log.info(f"Packet 2 received! len(data) = {len(data)}")
-                
                 offset = HEADER_SIZE + (player_car_idx * LAP_DATA_SIZE)
                 if len(data) < offset + LAP_DATA_SIZE:
-                    log.error(f"PACKET 2 SKIPPED! len={len(data)}, required={offset + LAP_DATA_SIZE}")
                     continue
 
                 last_lap_time_ms = struct.unpack_from('<I', data, offset + 0)[0]
@@ -285,9 +280,11 @@ def udp_listener():
                 sector1_min      = struct.unpack_from('<B', data, offset + 10)[0]
                 sector2_ms       = struct.unpack_from('<H', data, offset + 11)[0]
                 sector2_min      = struct.unpack_from('<B', data, offset + 13)[0]
-                current_lap_num  = struct.unpack_from('<B', data, offset + 31)[0]
-                pit_status       = struct.unpack_from('<B', data, offset + 32)[0]
-                lap_invalid      = struct.unpack_from('<B', data, offset + 33)[0]
+
+                # Offsets for F1 24/25 specification
+                current_lap_num  = struct.unpack_from('<B', data, offset + 30)[0]
+                pit_status       = struct.unpack_from('<B', data, offset + 31)[0]
+                lap_invalid      = struct.unpack_from('<B', data, offset + 34)[0]
 
                 s1_time = sector1_min * 60.0 + sector1_ms / 1000.0
                 s2_time = sector2_min * 60.0 + sector2_ms / 1000.0
