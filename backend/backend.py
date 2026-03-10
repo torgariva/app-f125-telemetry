@@ -367,6 +367,29 @@ def get_sessions_summary():
     return {r['track_id']: r['cnt'] for r in rows}
 
 
+# IMPORTANT: /sessions/detail/{id} MUST come before /sessions/{track_id}
+# FastAPI matches routes in registration order — if {track_id} were first,
+# the word "detail" would be interpreted as a track_id param.
+@app.get("/api/sessions/detail/{session_id}")
+def get_session_detail(session_id: str):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
+    row = c.fetchone()
+    conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {
+        "id":        row["id"],
+        "trackId":   row["track_id"],
+        "type":      row["type"],
+        "date":      row["date"],
+        "bestLap":   row["best_lap"],
+        "laps":      row["total_laps"],
+        "condition": row["condition"],
+    }
+
+
 @app.get("/api/sessions/{track_id}")
 def get_sessions(track_id: str):
     conn = get_conn()
@@ -388,26 +411,6 @@ def get_sessions(track_id: str):
         }
         for r in rows
     ]
-
-
-@app.get("/api/sessions/detail/{session_id}")
-def get_session_detail(session_id: str):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
-    row = c.fetchone()
-    conn.close()
-    if row is None:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return {
-        "id":        row["id"],
-        "trackId":   row["track_id"],
-        "type":      row["type"],
-        "date":      row["date"],
-        "bestLap":   row["best_lap"],
-        "laps":      row["total_laps"],
-        "condition": row["condition"],
-    }
 
 
 @app.get("/api/laps/{session_id}")
