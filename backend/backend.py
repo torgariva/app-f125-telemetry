@@ -3,8 +3,17 @@ import threading
 import sqlite3
 import os
 import struct
+import time
+from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# Configurar la zona horaria a Madrid
+os.environ['TZ'] = 'Europe/Madrid'
+try:
+    time.tzset()
+except AttributeError:
+    pass # tzset no está disponible en Windows, pero en Docker (Linux) sí funcionará
 
 app = FastAPI()
 
@@ -81,13 +90,14 @@ def udp_listener():
                 current_session_uid = session_uid
                 last_lap_num = 0
                 session_state = {}
+                current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 conn = sqlite3.connect(DB_PATH)
                 c = conn.cursor()
-                c.execute("INSERT OR IGNORE INTO sessions (id, track_id, date, type, best_lap, total_laps, condition) VALUES (?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)",
-                          (session_uid, current_track_id, 'Time Trial', '--:--.---', 0, 'Dry'))
+                c.execute("INSERT OR IGNORE INTO sessions (id, track_id, date, type, best_lap, total_laps, condition) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                          (session_uid, current_track_id, current_time, 'Time Trial', '--:--.---', 0, 'Dry'))
                 conn.commit()
                 conn.close()
-                print(f"[*] Nueva sesión detectada: {session_uid} en {current_track_id}")
+                print(f"[*] Nueva sesión detectada: {session_uid} en {current_track_id} a las {current_time}")
 
             # Packet ID 2: Lap Data
             if packet_id == 2:
