@@ -1,18 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #1A1A1A;
+  --bg: #111111;
   --ink: #FFFFFF;
-  --line: #333333;
+  --line: rgba(255, 255, 255, 0.05);
   --f-mono: 'JetBrains Mono', 'Courier New', Courier, monospace;
-  --f-sans: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --f-sans: 'Titillium Web', 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --accent: #FF1801; /* F1 Red */
+  --f1-red: #FF1801;
+  --widget-bg: rgba(26, 26, 26, 0.85);
 }
 
 body {
   background-color: var(--bg);
   color: var(--ink);
   font-family: var(--f-sans);
+  background-image: radial-gradient(circle at 50% 0%, rgba(255, 24, 1, 0.05) 0%, transparent 50%);
 }
 
 .data-row {
@@ -20,25 +23,28 @@ body {
   grid-template-columns: 40px 1fr 1fr 1fr 1fr 1fr 1fr;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--line);
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
+  align-items: center;
 }
 
 .data-row:hover {
-  background: var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--f1-red);
 }
 
 .col-header {
   font-family: var(--f-sans);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 11px;
-  opacity: 0.6;
+  opacity: 0.5;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--line);
+  letter-spacing: 0.1em;
+  padding: 1rem;
+  border-bottom: 2px solid var(--line);
   display: grid;
   grid-template-columns: 40px 1fr 1fr 1fr 1fr 1fr 1fr;
+  color: var(--ink);
 }
 
 .data-value {
@@ -47,23 +53,33 @@ body {
 }
 
 .widget-container {
-  background-color: #242424;
+  background-color: var(--widget-bg);
+  backdrop-filter: blur(12px);
   border-radius: 12px;
   border: 1px solid var(--line);
   overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.widget-container:hover {
+  border-color: rgba(255, 24, 1, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .widget-header {
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .widget-title {
-  font-weight: 600;
+  font-family: var(--f-sans);
+  font-weight: 700;
   font-size: 0.875rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: white;
 }
