@@ -89,7 +89,7 @@ function Home() {
               <div className="mt-auto relative z-10">
                 <div className="flex items-baseline gap-2">
                   <span className={`text-2xl font-black ${count > 0 ? 'text-white' : 'text-gray-600'}`}>
-                    {count === 0 ? '0' : count < 10 ? `0${count}` : count}
+                    {count}
                   </span>
                   <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">
                     Sessions
