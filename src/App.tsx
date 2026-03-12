@@ -11,30 +11,30 @@ const API_BASE_URL = window.location.hostname === 'localhost'
   : `http://${window.location.hostname}:8000`;
 
 const tracks = [
-  { id: 'bahrain', country: 'Bahrain', name: 'Bahrain International Circuit', round: 1 },
-  { id: 'saudi', country: 'Saudi Arabia', name: 'Jeddah Corniche Circuit', round: 2 },
-  { id: 'australia', country: 'Australia', name: 'Albert Park Circuit', round: 3 },
-  { id: 'japan', country: 'Japan', name: 'Suzuka International Racing Course', round: 4 },
-  { id: 'china', country: 'China', name: 'Shanghai International Circuit', round: 5 },
-  { id: 'miami', country: 'Miami', name: 'Miami International Autodrome', round: 6 },
-  { id: 'imola', country: 'Emilia Romagna', name: 'Autodromo Enzo e Dino Ferrari', round: 7 },
-  { id: 'monaco', country: 'Monaco', name: 'Circuit de Monaco', round: 8 },
-  { id: 'canada', country: 'Canada', name: 'Circuit Gilles-Villeneuve', round: 9 },
-  { id: 'spain', country: 'Spain', name: 'Circuit de Barcelona-Catalunya', round: 10 },
-  { id: 'austria', country: 'Austria', name: 'Red Bull Ring', round: 11 },
-  { id: 'uk', country: 'Great Britain', name: 'Silverstone Circuit', round: 12 },
-  { id: 'hungary', country: 'Hungary', name: 'Hungaroring', round: 13 },
-  { id: 'belgium', country: 'Belgium', name: 'Circuit de Spa-Francorchamps', round: 14 },
-  { id: 'netherlands', country: 'Netherlands', name: 'Circuit Zandvoort', round: 15 },
-  { id: 'italy', country: 'Italy', name: 'Autodromo Nazionale Monza', round: 16 },
-  { id: 'azerbaijan', country: 'Azerbaijan', name: 'Baku City Circuit', round: 17 },
-  { id: 'singapore', country: 'Singapore', name: 'Marina Bay Street Circuit', round: 18 },
-  { id: 'usa', country: 'United States', name: 'Circuit of The Americas', round: 19 },
-  { id: 'mexico', country: 'Mexico', name: 'Autódromo Hermanos Rodríguez', round: 20 },
-  { id: 'brazil', country: 'Brazil', name: 'Autódromo José Carlos Pace', round: 21 },
-  { id: 'vegas', country: 'Las Vegas', name: 'Las Vegas Strip Circuit', round: 22 },
-  { id: 'qatar', country: 'Qatar', name: 'Lusail International Circuit', round: 23 },
-  { id: 'abudhabi', country: 'Abu Dhabi', name: 'Yas Marina Circuit', round: 24 },
+  { id: 'bahrain', country: 'Bahrain', name: 'Bahrain International Circuit', round: 1, image: 'Bahrain' },
+  { id: 'saudi', country: 'Saudi Arabia', name: 'Jeddah Corniche Circuit', round: 2, image: 'Saudi%20Arabia' },
+  { id: 'australia', country: 'Australia', name: 'Albert Park Circuit', round: 3, image: 'Australia' },
+  { id: 'japan', country: 'Japan', name: 'Suzuka International Racing Course', round: 4, image: 'Japan' },
+  { id: 'china', country: 'China', name: 'Shanghai International Circuit', round: 5, image: 'China' },
+  { id: 'miami', country: 'Miami', name: 'Miami International Autodrome', round: 6, image: 'Miami' },
+  { id: 'imola', country: 'Emilia Romagna', name: 'Autodromo Enzo e Dino Ferrari', round: 7, image: 'Emilia%20Romagna' },
+  { id: 'monaco', country: 'Monaco', name: 'Circuit de Monaco', round: 8, image: 'Monaco' },
+  { id: 'canada', country: 'Canada', name: 'Circuit Gilles-Villeneuve', round: 9, image: 'Canada' },
+  { id: 'spain', country: 'Spain', name: 'Circuit de Barcelona-Catalunya', round: 10, image: 'Spain' },
+  { id: 'austria', country: 'Austria', name: 'Red Bull Ring', round: 11, image: 'Austria' },
+  { id: 'uk', country: 'Great Britain', name: 'Silverstone Circuit', round: 12, image: 'Great%20Britain' },
+  { id: 'hungary', country: 'Hungary', name: 'Hungaroring', round: 13, image: 'Hungary' },
+  { id: 'belgium', country: 'Belgium', name: 'Circuit de Spa-Francorchamps', round: 14, image: 'Belgium' },
+  { id: 'netherlands', country: 'Netherlands', name: 'Circuit Zandvoort', round: 15, image: 'Netherlands' },
+  { id: 'italy', country: 'Italy', name: 'Autodromo Nazionale Monza', round: 16, image: 'Italy' },
+  { id: 'azerbaijan', country: 'Azerbaijan', name: 'Baku City Circuit', round: 17, image: 'Azerbaijan' },
+  { id: 'singapore', country: 'Singapore', name: 'Marina Bay Street Circuit', round: 18, image: 'Singapore' },
+  { id: 'usa', country: 'United States', name: 'Circuit of The Americas', round: 19, image: 'United%20States' },
+  { id: 'mexico', country: 'Mexico', name: 'Autódromo Hermanos Rodríguez', round: 20, image: 'Mexico' },
+  { id: 'brazil', country: 'Brazil', name: 'Autódromo José Carlos Pace', round: 21, image: 'Brazil' },
+  { id: 'vegas', country: 'Las Vegas', name: 'Las Vegas Strip Circuit', round: 22, image: 'Las%20Vegas' },
+  { id: 'qatar', country: 'Qatar', name: 'Lusail International Circuit', round: 23, image: 'Qatar' },
+  { id: 'abudhabi', country: 'Abu Dhabi', name: 'Yas Marina Circuit', round: 24, image: 'Abu%20Dhabi' },
 ];
 
 function Home() {
@@ -73,20 +73,30 @@ function Home() {
             <div 
               key={track.id}
               onClick={() => navigate(`/track/${track.id}`)}
-              className="bg-[#242424] border border-[#333] hover:border-[#FF1801] hover:bg-[#2a2a2a] transition-all p-5 rounded-xl cursor-pointer group"
+              className="bg-[#242424] border border-[#333] hover:border-[#FF1801] hover:bg-[#2a2a2a] transition-all p-5 rounded-xl cursor-pointer group relative overflow-hidden"
             >
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-start mb-4 relative z-10">
                 <span className="text-xs font-mono text-gray-500 font-bold">R{track.round}</span>
                 <Flag size={16} className="text-gray-600 group-hover:text-[#FF1801] transition-colors" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-1">{track.country}</h3>
-              <p className="text-xs text-gray-400 font-mono truncate" title={track.name}>{track.name}</p>
+              <h3 className="text-lg font-bold text-white mb-1 relative z-10">{track.country}</h3>
+              <p className="text-xs text-gray-400 font-mono truncate relative z-10" title={track.name}>{track.name}</p>
               
-              <div className="mt-4 pt-4 border-t border-[#333] flex justify-between items-center">
+              <div className="mt-4 pt-4 border-t border-[#333] flex justify-between items-center relative z-10">
                 <span className="text-xs text-gray-500 uppercase">Sessions</span>
                 <span className={`text-sm font-mono font-bold ${count > 0 ? 'text-white' : 'text-gray-600'}`}>
                   {count}
                 </span>
+              </div>
+
+              {/* Track Silhouette */}
+              <div className="absolute bottom-4 right-4 opacity-20 group-hover:opacity-40 transition-opacity w-24 h-24 flex items-end justify-end pointer-events-none">
+                <img 
+                  src={`https://media.formula1.com/image/upload/f_auto,c_limit,w_1440,q_auto/f_auto/q_auto/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/${track.image}.png`}
+                  alt={`${track.country} Track Layout`}
+                  className="max-w-full max-h-full object-contain"
+                  referrerPolicy="no-referrer"
+                />
               </div>
             </div>
           );
@@ -244,7 +254,7 @@ const TyreBadge = ({ compound }: { compound: string }) => {
   if (comp.includes('soft') || comp === 'c16') { borderColor = 'border-[#FF2800]'; textColor = 'text-[#FF2800]'; letter = 'S'; }
   else if (comp.includes('medium') || comp === 'c17') { borderColor = 'border-[#FCD700]'; textColor = 'text-[#FCD700]'; letter = 'M'; }
   else if (comp.includes('hard') || comp === 'c18') { borderColor = 'border-[#FFFFFF]'; textColor = 'text-[#FFFFFF]'; letter = 'H'; }
-  else if (comp.includes('inter') || comp === 'c7') { borderColor = 'border-[#00D200]'; textColor = 'text-[#00D200]'; letter = 'I'; }
+  else if (comp.includes('inter') || comp === 'c7') { borderColor = 'border-[#309f46]'; textColor = 'text-[#309f46]'; letter = 'I'; }
   else if (comp.includes('wet') || comp === 'c8') { borderColor = 'border-[#0066FF]'; textColor = 'text-[#0066FF]'; letter = 'W'; }
 
   return (
@@ -411,16 +421,16 @@ function SessionDashboard() {
                   return (
                     <tr key={lap.lap} className="border-b border-white/5 hover:bg-white/10 hover:outline hover:outline-1 hover:outline-white transition-all cursor-default group">
                       <td className="py-3 px-4 text-white">{lap.lap}</td>
-                      <td className={`py-3 px-4 ${isOverallBestS1 ? 'text-[#b82ee6]' : isPersonalBestS1 ? 'text-[#00ff00]' : 'text-white'}`}>
+                      <td className={`py-3 px-4 ${isOverallBestS1 ? 'text-[#b82ee6]' : isPersonalBestS1 ? 'text-[#4db721]' : 'text-white'}`}>
                         {formatSector(lap.s1)}
                       </td>
-                      <td className={`py-3 px-4 ${isOverallBestS2 ? 'text-[#b82ee6]' : isPersonalBestS2 ? 'text-[#00ff00]' : 'text-white'}`}>
+                      <td className={`py-3 px-4 ${isOverallBestS2 ? 'text-[#b82ee6]' : isPersonalBestS2 ? 'text-[#4db721]' : 'text-white'}`}>
                         {formatSector(lap.s2)}
                       </td>
-                      <td className={`py-3 px-4 ${isOverallBestS3 ? 'text-[#b82ee6]' : isPersonalBestS3 ? 'text-[#00ff00]' : 'text-white'}`}>
+                      <td className={`py-3 px-4 ${isOverallBestS3 ? 'text-[#b82ee6]' : isPersonalBestS3 ? 'text-[#4db721]' : 'text-white'}`}>
                         {formatSector(lap.s3)}
                       </td>
-                      <td className={`py-3 px-4 ${isOverallBestLap ? 'text-[#b82ee6]' : isPersonalBestLap ? 'text-[#00ff00]' : 'text-white'}`}>
+                      <td className={`py-3 px-4 ${isOverallBestLap ? 'text-[#b82ee6]' : isPersonalBestLap ? 'text-[#4db721]' : 'text-white'}`}>
                         {formatTime(lap.total)}
                       </td>
                       <td className="py-3 px-4 text-center">
