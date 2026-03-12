@@ -49,6 +49,16 @@ def init_db():
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, track_id TEXT, date TEXT, type TEXT, best_lap TEXT, total_laps INTEGER, condition TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS laps (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT, lap_number INTEGER, s1 REAL, s2 REAL, s3 REAL, total REAL, compound TEXT, wear REAL)''')
+    
+    # Migrations
+    try:
+        c.execute("ALTER TABLE sessions ADD COLUMN best_s1 REAL")
+        c.execute("ALTER TABLE sessions ADD COLUMN best_s2 REAL")
+        c.execute("ALTER TABLE sessions ADD COLUMN best_s3 REAL")
+        c.execute("ALTER TABLE sessions ADD COLUMN best_lap_overall REAL")
+    except sqlite3.OperationalError:
+        pass # Columns already exist
+        
     conn.commit()
     conn.close()
 
@@ -63,6 +73,8 @@ def udp_listener():
     current_track_id = 'bahrain'
     recorded_laps = set()
     session_state = {} # lap_num -> {'s1': 0, 's2': 0}
+    all_cars_state = {i: {'lap_num': 0, 's1': 0, 's2': 0} for i in range(22)}
+    session_bests = {'s1': float('inf'), 's2': float('inf'), 's3': float('inf'), 'lap': float('inf')}
     current_weather = 'Dry'
     current_tyre = 'Soft'
     current_tyre_wear = 0.0
@@ -114,6 +126,8 @@ def udp_listener():
                 current_session_uid = session_uid
                 recorded_laps = set()
                 session_state = {}
+                all_cars_state = {i: {'lap_num': 0, 's1': 0, 's2': 0} for i in range(22)}
+                session_bests = {'s1': float('inf'), 's2': float('inf'), 's3': float('inf'), 'lap': float('inf')}
                 current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 conn = sqlite3.connect(DB_PATH)
                 c = conn.cursor()
@@ -149,71 +163,95 @@ def udp_listener():
 
             # Packet ID 2: Lap Data
             elif packet_id == 2:
-                if packet_format == 2023:
-                    lap_size = 43
-                    lap_data_offset = 29 + (player_car_index * lap_size)
-                    last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
-                    sector1_ms = struct.unpack_from('<H', data, lap_data_offset + 8)[0]
-                    sector2_ms = struct.unpack_from('<H', data, lap_data_offset + 10)[0]
-                    current_lap_num = struct.unpack_from('<B', data, lap_data_offset + 25)[0]
-                    s1_time = sector1_ms / 1000.0
-                    s2_time = sector2_ms / 1000.0
-                else:
-                    # F1 24/25
-                    lap_size = (len(data) - 29) // 22
-                    lap_data_offset = 29 + (player_car_index * lap_size)
-                    
-                    last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
-                    sector1_ms = struct.unpack_from('<H', data, lap_data_offset + 8)[0]
-                    sector1_min = struct.unpack_from('<B', data, lap_data_offset + 10)[0]
-                    sector2_ms = struct.unpack_from('<H', data, lap_data_offset + 11)[0]
-                    sector2_min = struct.unpack_from('<B', data, lap_data_offset + 13)[0]
-                    
-                    # En F1 24/25 m_currentLapNum está en el offset 33 de LapData (revisado por documentación UDP F1 25)
-                    current_lap_num = struct.unpack_from('<B', data, lap_data_offset + 33)[0]
-                    
-                    # Print debug info once per session or lap
-                    if current_lap_num not in session_state:
-                        print(f"[DEBUG] Packet 2 length: {len(data)}, calculated lap_size: {lap_size}")
-                    
-                    if current_lap_num > 150: # Invalid lap number, probably wrong offset
-                        # Let's search for the lap number (usually 1, 2, 3...)
-                        if current_lap_num not in session_state:
-                            bytes_str = " ".join([f"{b:02x}" for b in data[lap_data_offset:lap_data_offset+lap_size]])
-                            print(f"[DEBUG] Wrong lap num {current_lap_num}. Bytes: {bytes_str}")
-                    
-                    s1_time = sector1_min * 60 + sector1_ms / 1000.0
-                    s2_time = sector2_min * 60 + sector2_ms / 1000.0
-
-                # Guardar los sectores mientras la vuelta está en progreso
-                if current_lap_num not in session_state:
-                    session_state[current_lap_num] = {'s1': 0, 's2': 0}
+                lap_size = 43 if packet_format == 2023 else (len(data) - 29) // 22
                 
-                if s1_time > 0:
-                    session_state[current_lap_num]['s1'] = s1_time
-                if s2_time > 0:
-                    session_state[current_lap_num]['s2'] = s2_time
+                for i in range(22):
+                    lap_data_offset = 29 + (i * lap_size)
+                    if lap_data_offset + lap_size > len(data):
+                        continue
+                        
+                    if packet_format == 2023:
+                        last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
+                        sector1_ms = struct.unpack_from('<H', data, lap_data_offset + 8)[0]
+                        sector2_ms = struct.unpack_from('<H', data, lap_data_offset + 10)[0]
+                        current_lap_num = struct.unpack_from('<B', data, lap_data_offset + 25)[0]
+                        s1_time = sector1_ms / 1000.0
+                        s2_time = sector2_ms / 1000.0
+                    else:
+                        # F1 24/25
+                        last_lap_time_ms = struct.unpack_from('<I', data, lap_data_offset)[0]
+                        sector1_ms = struct.unpack_from('<H', data, lap_data_offset + 8)[0]
+                        sector1_min = struct.unpack_from('<B', data, lap_data_offset + 10)[0]
+                        sector2_ms = struct.unpack_from('<H', data, lap_data_offset + 11)[0]
+                        sector2_min = struct.unpack_from('<B', data, lap_data_offset + 13)[0]
+                        current_lap_num = struct.unpack_from('<B', data, lap_data_offset + 33)[0]
+                        
+                        s1_time = sector1_min * 60 + sector1_ms / 1000.0
+                        s2_time = sector2_min * 60 + sector2_ms / 1000.0
 
-                # Si el número de vuelta cambia, hemos completado una vuelta
-                completed_lap_num = current_lap_num - 1
-                
-                # Check ALL previous laps to ensure missed transitions are marked
-                for lap_to_check in range(1, current_lap_num):
-                    if lap_to_check not in recorded_laps:
-                        if lap_to_check == completed_lap_num and last_lap_time_ms > 0:
+                    # --- Tracking para TODOS los coches (Session Bests) ---
+                    if current_lap_num > all_cars_state[i]['lap_num']:
+                        if all_cars_state[i]['lap_num'] > 0 and last_lap_time_ms > 0:
                             lap_time_sec = last_lap_time_ms / 1000.0
+                            c_s1 = all_cars_state[i]['s1']
+                            c_s2 = all_cars_state[i]['s2']
+                            c_s3 = lap_time_sec - c_s1 - c_s2 if (c_s1 > 0 and c_s2 > 0) else 0
                             
-                            s1 = session_state.get(lap_to_check, {}).get('s1', 0)
-                            s2 = session_state.get(lap_to_check, {}).get('s2', 0)
-                            s3 = lap_time_sec - s1 - s2 if (s1 > 0 and s2 > 0) else 0
+                            bests_updated = False
+                            if c_s1 > 0 and c_s1 < session_bests['s1']: session_bests['s1'] = c_s1; bests_updated = True
+                            if c_s2 > 0 and c_s2 < session_bests['s2']: session_bests['s2'] = c_s2; bests_updated = True
+                            if c_s3 > 0 and c_s3 < session_bests['s3']: session_bests['s3'] = c_s3; bests_updated = True
+                            if lap_time_sec > 0 and lap_time_sec < session_bests['lap']: session_bests['lap'] = lap_time_sec; bests_updated = True
                             
-                            minutes = int(lap_time_sec // 60)
-                            seconds = lap_time_sec % 60
-                            lap_str = f"{minutes}:{seconds:06.3f}"
-                            
-                            try:
-                                conn = sqlite3.connect(DB_PATH, timeout=5.0) # Explicit wait up to 5s
-                                c = conn.cursor()
+                            if bests_updated:
+                                try:
+                                    conn = sqlite3.connect(DB_PATH, timeout=5.0)
+                                    c = conn.cursor()
+                                    c.execute("UPDATE sessions SET best_s1=?, best_s2=?, best_s3=?, best_lap_overall=? WHERE id=?", 
+                                              (session_bests['s1'], session_bests['s2'], session_bests['s3'], session_bests['lap'], current_session_uid))
+                                    conn.commit()
+                                    conn.close()
+                                except Exception:
+                                    pass
+                                    
+                        all_cars_state[i]['lap_num'] = current_lap_num
+                        all_cars_state[i]['s1'] = 0
+                        all_cars_state[i]['s2'] = 0
+                        
+                    if s1_time > 0: all_cars_state[i]['s1'] = s1_time
+                    if s2_time > 0: all_cars_state[i]['s2'] = s2_time
+
+                    # --- Lógica específica del JUGADOR ---
+                    if i == player_car_index:
+                        # Guardar los sectores mientras la vuelta está en progreso
+                        if current_lap_num not in session_state:
+                            session_state[current_lap_num] = {'s1': 0, 's2': 0}
+                        
+                        if s1_time > 0:
+                            session_state[current_lap_num]['s1'] = s1_time
+                        if s2_time > 0:
+                            session_state[current_lap_num]['s2'] = s2_time
+
+                        # Si el número de vuelta cambia, hemos completado una vuelta
+                        completed_lap_num = current_lap_num - 1
+                        
+                        # Check ALL previous laps to ensure missed transitions are marked
+                        for lap_to_check in range(1, current_lap_num):
+                            if lap_to_check not in recorded_laps:
+                                if lap_to_check == completed_lap_num and last_lap_time_ms > 0:
+                                    lap_time_sec = last_lap_time_ms / 1000.0
+                                    
+                                    s1 = session_state.get(lap_to_check, {}).get('s1', 0)
+                                    s2 = session_state.get(lap_to_check, {}).get('s2', 0)
+                                    s3 = lap_time_sec - s1 - s2 if (s1 > 0 and s2 > 0) else 0
+                                    
+                                    minutes = int(lap_time_sec // 60)
+                                    seconds = lap_time_sec % 60
+                                    lap_str = f"{minutes}:{seconds:06.3f}"
+                                    
+                                    try:
+                                        conn = sqlite3.connect(DB_PATH, timeout=5.0) # Explicit wait up to 5s
+                                        c = conn.cursor()
                                 
                                 c.execute("INSERT INTO laps (session_id, lap_number, s1, s2, s3, total, compound, wear) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                                           (session_uid, lap_to_check, s1, s2, s3, lap_time_sec, current_tyre, round(current_tyre_wear, 2)))
@@ -380,7 +418,11 @@ def get_session(session_id: str):
             "date": row["date"],
             "bestLap": row["best_lap"],
             "laps": row["total_laps"],
-            "condition": row["condition"]
+            "condition": row["condition"],
+            "best_s1": row["best_s1"] if "best_s1" in row.keys() else None,
+            "best_s2": row["best_s2"] if "best_s2" in row.keys() else None,
+            "best_s3": row["best_s3"] if "best_s3" in row.keys() else None,
+            "best_lap_overall": row["best_lap_overall"] if "best_lap_overall" in row.keys() else None
         }
     return {"error": "Session not found"}
 

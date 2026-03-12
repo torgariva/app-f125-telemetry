@@ -397,24 +397,30 @@ function SessionDashboard() {
                 </tr>
               ) : (
                 laps.map((lap, i) => {
-                  const isBestLap = lap.total === bestLap.val;
-                  const isBestS1 = lap.s1 === bestS1.val;
-                  const isBestS2 = lap.s2 === bestS2.val;
-                  const isBestS3 = lap.s3 === bestS3.val;
+                  const isPersonalBestLap = lap.total === bestLap.val;
+                  const isPersonalBestS1 = lap.s1 === bestS1.val;
+                  const isPersonalBestS2 = lap.s2 === bestS2.val;
+                  const isPersonalBestS3 = lap.s3 === bestS3.val;
+
+                  // Check against overall session bests (from all drivers)
+                  const isOverallBestLap = session?.best_lap_overall && Math.abs(lap.total - session.best_lap_overall) < 0.002;
+                  const isOverallBestS1 = session?.best_s1 && Math.abs(lap.s1 - session.best_s1) < 0.002;
+                  const isOverallBestS2 = session?.best_s2 && Math.abs(lap.s2 - session.best_s2) < 0.002;
+                  const isOverallBestS3 = session?.best_s3 && Math.abs(lap.s3 - session.best_s3) < 0.002;
 
                   return (
                     <tr key={lap.lap} className="border-b border-white/5 hover:bg-white/10 hover:outline hover:outline-1 hover:outline-white transition-all cursor-default group">
                       <td className="py-3 px-4 text-white">{lap.lap}</td>
-                      <td className={`py-3 px-4 ${isBestS1 ? 'text-[#00ff00]' : 'text-white'}`}>
+                      <td className={`py-3 px-4 ${isOverallBestS1 ? 'text-[#b82ee6]' : isPersonalBestS1 ? 'text-[#00ff00]' : 'text-white'}`}>
                         {formatSector(lap.s1)}
                       </td>
-                      <td className={`py-3 px-4 ${isBestS2 ? 'text-[#00ff00]' : 'text-white'}`}>
+                      <td className={`py-3 px-4 ${isOverallBestS2 ? 'text-[#b82ee6]' : isPersonalBestS2 ? 'text-[#00ff00]' : 'text-white'}`}>
                         {formatSector(lap.s2)}
                       </td>
-                      <td className={`py-3 px-4 ${isBestS3 ? 'text-[#00ff00]' : 'text-white'}`}>
+                      <td className={`py-3 px-4 ${isOverallBestS3 ? 'text-[#b82ee6]' : isPersonalBestS3 ? 'text-[#00ff00]' : 'text-white'}`}>
                         {formatSector(lap.s3)}
                       </td>
-                      <td className={`py-3 px-4 ${isBestLap ? 'text-[#00ff00]' : 'text-white'}`}>
+                      <td className={`py-3 px-4 ${isOverallBestLap ? 'text-[#b82ee6]' : isPersonalBestLap ? 'text-[#00ff00]' : 'text-white'}`}>
                         {formatTime(lap.total)}
                       </td>
                       <td className="py-3 px-4 text-center">
