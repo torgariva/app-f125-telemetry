@@ -11,30 +11,30 @@ const API_BASE_URL = window.location.hostname === 'localhost'
   : `http://${window.location.hostname}:8000`;
 
 const tracks = [
-  { id: 'australia', country: 'Australia', name: 'Albert Park Circuit', round: 1, image: 'Australia' },
-  { id: 'china', country: 'China', name: 'Shanghai International Circuit', round: 2, image: 'China' },
-  { id: 'japan', country: 'Japan', name: 'Suzuka International Racing Course', round: 3, image: 'Japan' },
-  { id: 'bahrain', country: 'Bahrain', name: 'Bahrain International Circuit', round: 4, image: 'Bahrain' },
-  { id: 'saudi', country: 'Saudi Arabia', name: 'Jeddah Corniche Circuit', round: 5, image: 'Saudi%20Arabia' },
-  { id: 'miami', country: 'Miami', name: 'Miami International Autodrome', round: 6, image: 'Miami' },
-  { id: 'imola', country: 'Emilia Romagna', name: 'Autodromo Enzo e Dino Ferrari', round: 7, image: 'Emilia%20Romagna' },
-  { id: 'monaco', country: 'Monaco', name: 'Circuit de Monaco', round: 8, image: 'Monaco' },
-  { id: 'spain', country: 'Spain', name: 'Circuit de Barcelona-Catalunya', round: 9, image: 'Spain' },
-  { id: 'canada', country: 'Canada', name: 'Circuit Gilles-Villeneuve', round: 10, image: 'Canada' },
-  { id: 'austria', country: 'Austria', name: 'Red Bull Ring', round: 11, image: 'Austria' },
-  { id: 'uk', country: 'Great Britain', name: 'Silverstone Circuit', round: 12, image: 'Great%20Britain' },
-  { id: 'belgium', country: 'Belgium', name: 'Circuit de Spa-Francorchamps', round: 13, image: 'Belgium' },
-  { id: 'hungary', country: 'Hungary', name: 'Hungaroring', round: 14, image: 'Hungary' },
-  { id: 'netherlands', country: 'Netherlands', name: 'Circuit Zandvoort', round: 15, image: 'Netherlands' },
-  { id: 'italy', country: 'Italy', name: 'Autodromo Nazionale Monza', round: 16, image: 'Italy' },
-  { id: 'azerbaijan', country: 'Azerbaijan', name: 'Baku City Circuit', round: 17, image: 'Azerbaijan' },
-  { id: 'singapore', country: 'Singapore', name: 'Marina Bay Street Circuit', round: 18, image: 'Singapore' },
-  { id: 'usa', country: 'United States', name: 'Circuit of The Americas', round: 19, image: 'United%20States' },
-  { id: 'mexico', country: 'Mexico', name: 'Autódromo Hermanos Rodríguez', round: 20, image: 'Mexico' },
-  { id: 'brazil', country: 'Brazil', name: 'Autódromo José Carlos Pace', round: 21, image: 'Brazil' },
-  { id: 'vegas', country: 'Las Vegas', name: 'Las Vegas Strip Circuit', round: 22, image: 'Las%20Vegas' },
-  { id: 'qatar', country: 'Qatar', name: 'Lusail International Circuit', round: 23, image: 'Qatar' },
-  { id: 'abudhabi', country: 'Abu Dhabi', name: 'Yas Marina Circuit', round: 24, image: 'Abu%20Dhabi' },
+  { id: 'australia', country: 'Australia', name: 'Albert Park Circuit', round: 1, image: 'Australia', countryCode: 'au' },
+  { id: 'china', country: 'China', name: 'Shanghai International Circuit', round: 2, image: 'China', countryCode: 'cn' },
+  { id: 'japan', country: 'Japan', name: 'Suzuka International Racing Course', round: 3, image: 'Japan', countryCode: 'jp' },
+  { id: 'bahrain', country: 'Bahrain', name: 'Bahrain International Circuit', round: 4, image: 'Bahrain', countryCode: 'bh' },
+  { id: 'saudi', country: 'Saudi Arabia', name: 'Jeddah Corniche Circuit', round: 5, image: 'Saudi%20Arabia', countryCode: 'sa' },
+  { id: 'miami', country: 'Miami', name: 'Miami International Autodrome', round: 6, image: 'Miami', countryCode: 'us' },
+  { id: 'imola', country: 'Emilia Romagna', name: 'Autodromo Enzo e Dino Ferrari', round: 7, image: 'Emilia%20Romagna', countryCode: 'it' },
+  { id: 'monaco', country: 'Monaco', name: 'Circuit de Monaco', round: 8, image: 'Monaco', countryCode: 'mc' },
+  { id: 'spain', country: 'Spain', name: 'Circuit de Barcelona-Catalunya', round: 9, image: 'Spain', countryCode: 'es' },
+  { id: 'canada', country: 'Canada', name: 'Circuit Gilles-Villeneuve', round: 10, image: 'Canada', countryCode: 'ca' },
+  { id: 'austria', country: 'Austria', name: 'Red Bull Ring', round: 11, image: 'Austria', countryCode: 'at' },
+  { id: 'uk', country: 'Great Britain', name: 'Silverstone Circuit', round: 12, image: 'Great%20Britain', countryCode: 'gb' },
+  { id: 'belgium', country: 'Belgium', name: 'Circuit de Spa-Francorchamps', round: 13, image: 'Belgium', countryCode: 'be' },
+  { id: 'hungary', country: 'Hungary', name: 'Hungaroring', round: 14, image: 'Hungary', countryCode: 'hu' },
+  { id: 'netherlands', country: 'Netherlands', name: 'Circuit Zandvoort', round: 15, image: 'Netherlands', countryCode: 'nl' },
+  { id: 'italy', country: 'Italy', name: 'Autodromo Nazionale Monza', round: 16, image: 'Italy', countryCode: 'it' },
+  { id: 'azerbaijan', country: 'Azerbaijan', name: 'Baku City Circuit', round: 17, image: 'Azerbaijan', countryCode: 'az' },
+  { id: 'singapore', country: 'Singapore', name: 'Marina Bay Street Circuit', round: 18, image: 'Singapore', countryCode: 'sg' },
+  { id: 'usa', country: 'United States', name: 'Circuit of The Americas', round: 19, image: 'United%20States', countryCode: 'us' },
+  { id: 'mexico', country: 'Mexico', name: 'Autódromo Hermanos Rodríguez', round: 20, image: 'Mexico', countryCode: 'mx' },
+  { id: 'brazil', country: 'Brazil', name: 'Autódromo José Carlos Pace', round: 21, image: 'Brazil', countryCode: 'br' },
+  { id: 'vegas', country: 'Las Vegas', name: 'Las Vegas Strip Circuit', round: 22, image: 'Las%20Vegas', countryCode: 'us' },
+  { id: 'qatar', country: 'Qatar', name: 'Lusail International Circuit', round: 23, image: 'Qatar', countryCode: 'qa' },
+  { id: 'abudhabi', country: 'Abu Dhabi', name: 'Yas Marina Circuit', round: 24, image: 'Abu%20Dhabi', countryCode: 'ae' },
 ];
 
 function Home() {
@@ -80,7 +80,14 @@ function Home() {
               </div>
               
               <div className="relative z-10 mb-6">
-                <h3 className="text-3xl font-black text-white tracking-tight mb-2 inline-block">{track.country}</h3>
+                <div className="flex items-center gap-3 mb-2">
+                  <img 
+                    src={`https://flagcdn.com/w40/${track.countryCode}.png`}
+                    alt={`${track.country} flag`}
+                    className="w-8 h-8 rounded-full object-cover border-2 border-white/10"
+                  />
+                  <h3 className="text-3xl font-black text-white tracking-tight inline-block">{track.country}</h3>
+                </div>
                 <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide leading-relaxed max-w-[85%]">
                   {track.name}
                 </p>
@@ -179,9 +186,16 @@ function TrackSessions() {
             <Link to="/" className="text-gray-400 hover:text-white transition-colors bg-[#050505] p-2 rounded-lg border border-[#151515] hover:border-[#333]">
               <ChevronLeft size={20} />
             </Link>
-            <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-              {track.country} Grand Prix
-            </h1>
+            <div className="flex items-center gap-3">
+              <img 
+                src={`https://flagcdn.com/w40/${track.countryCode}.png`}
+                alt={`${track.country} flag`}
+                className="w-8 h-8 rounded-full object-cover border-2 border-white/10"
+              />
+              <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                {track.country} Grand Prix
+              </h1>
+            </div>
           </div>
           <p className="text-gray-400 mt-1 font-mono text-sm flex items-center gap-2">
             <MapPin size={14} className="text-[#FF1801]" />
@@ -242,7 +256,7 @@ function TrackSessions() {
                   
                   <div className="flex items-center gap-4">
                     <h3 className="text-xl font-black text-white uppercase tracking-wide group-hover:text-gray-300 transition-colors">
-                      {session.type}
+                      {session.type === 'Time Trial' ? 'Race' : session.type}
                     </h3>
                     <div className="flex items-center gap-2">
                       {session.condition === 'Dry' ? (
