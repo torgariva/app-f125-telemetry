@@ -11,20 +11,20 @@ const API_BASE_URL = window.location.hostname === 'localhost'
   : `http://${window.location.hostname}:8000`;
 
 const tracks = [
-  { id: 'bahrain', country: 'Bahrain', name: 'Bahrain International Circuit', round: 1, image: 'Bahrain' },
-  { id: 'saudi', country: 'Saudi Arabia', name: 'Jeddah Corniche Circuit', round: 2, image: 'Saudi%20Arabia' },
-  { id: 'australia', country: 'Australia', name: 'Albert Park Circuit', round: 3, image: 'Australia' },
-  { id: 'japan', country: 'Japan', name: 'Suzuka International Racing Course', round: 4, image: 'Japan' },
-  { id: 'china', country: 'China', name: 'Shanghai International Circuit', round: 5, image: 'China' },
+  { id: 'australia', country: 'Australia', name: 'Albert Park Circuit', round: 1, image: 'Australia' },
+  { id: 'china', country: 'China', name: 'Shanghai International Circuit', round: 2, image: 'China' },
+  { id: 'japan', country: 'Japan', name: 'Suzuka International Racing Course', round: 3, image: 'Japan' },
+  { id: 'bahrain', country: 'Bahrain', name: 'Bahrain International Circuit', round: 4, image: 'Bahrain' },
+  { id: 'saudi', country: 'Saudi Arabia', name: 'Jeddah Corniche Circuit', round: 5, image: 'Saudi%20Arabia' },
   { id: 'miami', country: 'Miami', name: 'Miami International Autodrome', round: 6, image: 'Miami' },
   { id: 'imola', country: 'Emilia Romagna', name: 'Autodromo Enzo e Dino Ferrari', round: 7, image: 'Emilia%20Romagna' },
   { id: 'monaco', country: 'Monaco', name: 'Circuit de Monaco', round: 8, image: 'Monaco' },
-  { id: 'canada', country: 'Canada', name: 'Circuit Gilles-Villeneuve', round: 9, image: 'Canada' },
-  { id: 'spain', country: 'Spain', name: 'Circuit de Barcelona-Catalunya', round: 10, image: 'Spain' },
+  { id: 'spain', country: 'Spain', name: 'Circuit de Barcelona-Catalunya', round: 9, image: 'Spain' },
+  { id: 'canada', country: 'Canada', name: 'Circuit Gilles-Villeneuve', round: 10, image: 'Canada' },
   { id: 'austria', country: 'Austria', name: 'Red Bull Ring', round: 11, image: 'Austria' },
   { id: 'uk', country: 'Great Britain', name: 'Silverstone Circuit', round: 12, image: 'Great%20Britain' },
-  { id: 'hungary', country: 'Hungary', name: 'Hungaroring', round: 13, image: 'Hungary' },
-  { id: 'belgium', country: 'Belgium', name: 'Circuit de Spa-Francorchamps', round: 14, image: 'Belgium' },
+  { id: 'belgium', country: 'Belgium', name: 'Circuit de Spa-Francorchamps', round: 13, image: 'Belgium' },
+  { id: 'hungary', country: 'Hungary', name: 'Hungaroring', round: 14, image: 'Hungary' },
   { id: 'netherlands', country: 'Netherlands', name: 'Circuit Zandvoort', round: 15, image: 'Netherlands' },
   { id: 'italy', country: 'Italy', name: 'Autodromo Nazionale Monza', round: 16, image: 'Italy' },
   { id: 'azerbaijan', country: 'Azerbaijan', name: 'Baku City Circuit', round: 17, image: 'Azerbaijan' },
@@ -65,7 +65,7 @@ function Home() {
         <p className="text-gray-400 mt-2 font-mono text-sm tracking-wider">SELECT A GRAND PRIX TO VIEW TELEMETRY SESSIONS</p>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {tracks.map((track) => {
           const count = sessionCounts[track.id] || 0;
           
