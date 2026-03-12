@@ -233,6 +233,26 @@ function TrackSessions() {
   );
 }
 
+const TyreBadge = ({ compound }: { compound: string }) => {
+  let color = 'border-gray-500 text-gray-500';
+  let letter = '?';
+  
+  if (!compound) return <span className="text-gray-500">-</span>;
+
+  const comp = compound.toLowerCase();
+  if (comp.includes('soft')) { color = 'border-[#FF1801] text-[#FF1801]'; letter = 'S'; }
+  else if (comp.includes('medium')) { color = 'border-[#FFD100] text-[#FFD100]'; letter = 'M'; }
+  else if (comp.includes('hard')) { color = 'border-[#FFFFFF] text-[#FFFFFF]'; letter = 'H'; }
+  else if (comp.includes('inter')) { color = 'border-[#00D200] text-[#00D200]'; letter = 'I'; }
+  else if (comp.includes('wet')) { color = 'border-[#0066FF] text-[#0066FF]'; letter = 'W'; }
+
+  return (
+    <div className={`inline-flex items-center justify-center w-5 h-5 rounded-full border-[1.5px] ${color} font-bold text-[10px]`}>
+      {letter}
+    </div>
+  );
+};
+
 function SessionDashboard() {
   const { trackId, sessionId } = useParams();
   const track = tracks.find(t => t.id === trackId) || tracks[15];
@@ -275,7 +295,7 @@ function SessionDashboard() {
     return (
       <div className="min-h-screen p-6 max-w-7xl mx-auto flex flex-col items-center justify-center">
         <Activity size={48} className="text-[#FF1801] animate-pulse mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">Loading Telemetry...</h2>
+        <h2 className="text-xl font-bold text-white mb-2">Cargando Telemetría...</h2>
       </div>
     );
   }
@@ -284,9 +304,9 @@ function SessionDashboard() {
     return (
       <div className="min-h-screen p-6 max-w-7xl mx-auto flex flex-col items-center justify-center">
         <Activity size={48} className="text-[#FF1801] animate-pulse mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">Waiting for Telemetry...</h2>
-        <p className="text-gray-400">Listening on UDP Port 20777</p>
-        <Link to={`/track/${track.id}`} className="mt-6 text-[#FF1801] hover:underline">Return to Track</Link>
+        <h2 className="text-xl font-bold text-white mb-2">Esperando Telemetría...</h2>
+        <p className="text-gray-400">Escuchando en el puerto UDP 20777</p>
+        <Link to={`/track/${track.id}`} className="mt-6 text-[#FF1801] hover:underline">Volver al Circuito</Link>
       </div>
     );
   }
@@ -296,157 +316,103 @@ function SessionDashboard() {
   let bestS2 = { val: Infinity, lap: '-' };
   let bestS3 = { val: Infinity, lap: '-' };
   let bestLap = { val: Infinity, lap: '-' };
-  let totalTime = 0;
-  let validLapsCount = 0;
 
   laps.forEach(l => {
     if (l.s1 > 0 && l.s1 < bestS1.val) bestS1 = { val: l.s1, lap: l.lap };
     if (l.s2 > 0 && l.s2 < bestS2.val) bestS2 = { val: l.s2, lap: l.lap };
     if (l.s3 > 0 && l.s3 < bestS3.val) bestS3 = { val: l.s3, lap: l.lap };
     if (l.total > 0 && l.total < bestLap.val) bestLap = { val: l.total, lap: l.lap };
-    if (l.total > 0) {
-      totalTime += l.total;
-      validLapsCount++;
-    }
   });
 
-  const idealLap = (bestS1.val !== Infinity ? bestS1.val : 0) + 
-                   (bestS2.val !== Infinity ? bestS2.val : 0) + 
-                   (bestS3.val !== Infinity ? bestS3.val : 0);
-  const avgLap = validLapsCount > 0 ? totalTime / validLapsCount : 0;
-
   const formatTime = (sec: number) => {
-    if (!sec || sec <= 0 || sec === Infinity) return '---';
+    if (!sec || sec <= 0 || sec === Infinity) return '--:--.---';
     const m = Math.floor(sec / 60);
     const s = (sec % 60).toFixed(3).padStart(6, '0');
     return m > 0 ? `${m}:${s}` : s;
   };
 
+  const formatSector = (sec: number) => {
+    if (!sec || sec <= 0 || sec === Infinity) return '--.---';
+    return sec.toFixed(3);
+  };
+
   return (
-    <div className="min-h-screen p-6 max-w-5xl mx-auto">
-      <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-4 mb-2">
-            <Link to={`/track/${track.id}`} className="text-gray-400 hover:text-white transition-colors bg-[#242424] p-2 rounded-lg border border-[#333] hover:border-[#FF1801]">
-              <ChevronLeft size={20} />
-            </Link>
-            <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-              Detailed Session History
-            </h1>
-          </div>
-          <p className="text-yellow-500 mt-1 font-mono text-sm flex items-center gap-2">
-            {track.name} | PORT: 20777
-          </p>
-        </div>
+    <div className="min-h-screen p-6 max-w-6xl mx-auto font-f1">
+      <header className="mb-6 flex items-center justify-between">
+        <Link to={`/track/${track.id}`} className="text-gray-400 hover:text-white transition-colors bg-[#242424] p-2 rounded-lg border border-[#333] hover:border-[#FF1801]">
+          <ChevronLeft size={20} />
+        </Link>
       </header>
-      
-      <div className="space-y-6">
-        
-        {/* Telemetry Table */}
-        <div className="bg-[#111] border border-[#333] rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse font-mono text-sm">
-              <thead>
-                <tr className="text-yellow-500 border-b border-[#333] bg-[#1a1a1a]">
-                  <th className="py-3 px-6 font-normal">LAP</th>
-                  <th className="py-3 px-6 font-normal">LAPTIME</th>
-                  <th className="py-3 px-6 font-normal">S1</th>
-                  <th className="py-3 px-6 font-normal">S2</th>
-                  <th className="py-3 px-6 font-normal">S3</th>
-                  <th className="py-3 px-6 font-normal">TYRE</th>
-                  <th className="py-3 px-6 font-normal">PIT</th>
-                </tr>
-              </thead>
-              <tbody>
-                {laps.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">No laps recorded yet.</td>
-                  </tr>
-                ) : (
-                  laps.map((lap, i) => {
-                    const isBestLap = lap.total === bestLap.val;
-                    const isBestS1 = lap.s1 === bestS1.val;
-                    const isBestS2 = lap.s2 === bestS2.val;
-                    const isBestS3 = lap.s3 === bestS3.val;
-                    
-                    return (
-                      <tr key={lap.lap} className="border-b border-[#222] hover:bg-[#2a2a2a] transition-colors">
-                        <td className="py-2 px-6 text-gray-400">L{lap.lap}</td>
-                        <td className={`py-2 px-6 ${isBestLap ? 'text-purple-400 font-bold' : 'text-white'}`}>
-                          {formatTime(lap.total)}
-                        </td>
-                        <td className={`py-2 px-6 ${isBestS1 ? 'text-purple-400' : lap.s1 > 0 ? 'text-green-400' : 'text-gray-600'}`}>
-                          {lap.s1 > 0 ? lap.s1.toFixed(3) : '---'}
-                        </td>
-                        <td className={`py-2 px-6 ${isBestS2 ? 'text-purple-400' : lap.s2 > 0 ? 'text-green-400' : 'text-gray-600'}`}>
-                          {lap.s2 > 0 ? lap.s2.toFixed(3) : '---'}
-                        </td>
-                        <td className={`py-2 px-6 ${isBestS3 ? 'text-purple-400' : lap.s3 > 0 ? 'text-green-400' : 'text-gray-600'}`}>
-                          {lap.s3 > 0 ? lap.s3.toFixed(3) : '---'}
-                        </td>
-                        <td className="py-2 px-6 text-gray-400 text-xs uppercase">{lap.compound}</td>
-                        <td className="py-2 px-6 text-gray-500">{i === 0 ? 'out' : ''}</td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+
+      <div className="relative bg-[#1a1a1a]/90 backdrop-blur-md border border-white/20 rounded-2xl overflow-hidden shadow-2xl">
+        {/* Top Red Tab */}
+        <div className="absolute top-0 left-0 bg-[#FF1801] text-white text-xs font-bold px-4 py-1.5 rounded-br-lg z-10 uppercase tracking-wider">
+          Tiempos de Vuelta
+        </div>
+
+        {/* Header Section */}
+        <div className="pt-12 pb-6 px-8 border-b border-white/10">
+          <h1 className="text-5xl font-black text-white tracking-tighter italic leading-none">FORMULA 1</h1>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-gray-400 text-sm"><Activity size={16} /></span>
+            <span className="text-white font-bold tracking-widest uppercase text-sm">{track.name}</span>
           </div>
         </div>
 
-        {/* Summary Block */}
-        {laps.length > 0 && (
-          <div className="bg-[#111] border border-[#333] rounded-xl p-6 font-mono text-sm space-y-6">
-            
-            {/* Averages */}
-            <div className="text-gray-300 border-b border-[#333] pb-4">
-              <span className="text-yellow-500">All laps avg:</span> {formatTime(avgLap)} 
-              <span className="text-gray-600 mx-4">|</span> 
-              <span className="text-yellow-500">Total time driven:</span> {formatTime(totalTime)}
-            </div>
+        {/* Table Section */}
+        <div className="px-4 pb-4 overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr className="text-white text-xs tracking-widest border-b border-white/10">
+                <th className="py-4 px-4 font-bold uppercase w-24">Vuelta</th>
+                <th className="py-4 px-4 font-bold uppercase">Sector 1</th>
+                <th className="py-4 px-4 font-bold uppercase">Sector 2</th>
+                <th className="py-4 px-4 font-bold uppercase">Sector 3</th>
+                <th className="py-4 px-4 font-bold uppercase">Tiempo de Vuelta</th>
+                <th className="py-4 px-4 font-bold uppercase text-center">Neumát.</th>
+                <th className="py-4 px-4 font-bold uppercase text-right">Desgaste</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm font-bold">
+              {laps.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-gray-500 font-normal">No hay vueltas registradas.</td>
+                </tr>
+              ) : (
+                laps.map((lap, i) => {
+                  const isBestLap = lap.total === bestLap.val;
+                  const isBestS1 = lap.s1 === bestS1.val;
+                  const isBestS2 = lap.s2 === bestS2.val;
+                  const isBestS3 = lap.s3 === bestS3.val;
 
-            {/* Best Sectors */}
-            <div className="border-b border-[#333] pb-4">
-              <div className="text-yellow-500 mb-3">Driver best sectors:</div>
-              <div className="grid grid-cols-3 gap-4 text-gray-300 max-w-md">
-                <div>
-                  <span className="text-gray-500 mr-2">S1</span> 
-                  <span className="text-yellow-600 mr-2">L{bestS1.lap}</span> 
-                  <span className="text-white font-bold">{bestS1.val !== Infinity ? bestS1.val.toFixed(3) : '---'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500 mr-2">S2</span> 
-                  <span className="text-yellow-600 mr-2">L{bestS2.lap}</span> 
-                  <span className="text-white font-bold">{bestS2.val !== Infinity ? bestS2.val.toFixed(3) : '---'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500 mr-2">S3</span> 
-                  <span className="text-yellow-600 mr-2">L{bestS3.lap}</span> 
-                  <span className="text-white font-bold">{bestS3.val !== Infinity ? bestS3.val.toFixed(3) : '---'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Session Best Times */}
-            <div>
-              <div className="text-yellow-500 mb-3">Session best times, time/lap</div>
-              <div className="flex flex-wrap gap-12 text-gray-300">
-                <div>
-                  <span className="text-gray-500 block mb-1">LAPTIME</span> 
-                  <span className="text-white font-bold text-lg">{formatTime(bestLap.val)}</span> 
-                  <span className="text-yellow-600 ml-2">L{bestLap.lap}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500 block mb-1">IDEAL LAP</span> 
-                  <span className="text-purple-400 font-bold text-lg">{formatTime(idealLap)}</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        )}
-
+                  return (
+                    <tr key={lap.lap} className="border-b border-white/5 hover:bg-white/10 hover:outline hover:outline-1 hover:outline-white transition-all cursor-default group">
+                      <td className="py-3 px-4 text-white">{lap.lap}</td>
+                      <td className={`py-3 px-4 ${isBestS1 ? 'text-[#00ff00]' : 'text-white'}`}>
+                        {formatSector(lap.s1)}
+                      </td>
+                      <td className={`py-3 px-4 ${isBestS2 ? 'text-[#00ff00]' : 'text-white'}`}>
+                        {formatSector(lap.s2)}
+                      </td>
+                      <td className={`py-3 px-4 ${isBestS3 ? 'text-[#00ff00]' : 'text-white'}`}>
+                        {formatSector(lap.s3)}
+                      </td>
+                      <td className={`py-3 px-4 ${isBestLap ? 'text-[#00ff00]' : 'text-white'}`}>
+                        {formatTime(lap.total)}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <TyreBadge compound={lap.compound} />
+                      </td>
+                      <td className="py-3 px-4 text-gray-400 font-mono text-xs text-right">
+                        {lap.wear ? `${lap.wear}%` : '-'}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
