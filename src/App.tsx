@@ -247,7 +247,7 @@ const TyreBadge = ({ compound }: { compound: string }) => {
   else if (comp.includes('wet')) { color = 'border-[#0066FF] text-[#0066FF]'; letter = 'W'; }
 
   return (
-    <div className={`inline-flex items-center justify-center w-5 h-5 rounded-full border-[1.5px] ${color} font-bold text-[10px]`}>
+    <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full border-2 ${color} font-black text-xs`}>
       {letter}
     </div>
   );
@@ -295,7 +295,7 @@ function SessionDashboard() {
     return (
       <div className="min-h-screen p-6 max-w-7xl mx-auto flex flex-col items-center justify-center">
         <Activity size={48} className="text-[#FF1801] animate-pulse mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">Cargando Telemetría...</h2>
+        <h2 className="text-xl font-bold text-white mb-2">Loading Telemetry...</h2>
       </div>
     );
   }
@@ -304,9 +304,9 @@ function SessionDashboard() {
     return (
       <div className="min-h-screen p-6 max-w-7xl mx-auto flex flex-col items-center justify-center">
         <Activity size={48} className="text-[#FF1801] animate-pulse mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">Esperando Telemetría...</h2>
-        <p className="text-gray-400">Escuchando en el puerto UDP 20777</p>
-        <Link to={`/track/${track.id}`} className="mt-6 text-[#FF1801] hover:underline">Volver al Circuito</Link>
+        <h2 className="text-xl font-bold text-white mb-2">Waiting for Telemetry...</h2>
+        <p className="text-gray-400">Listening on UDP Port 20777</p>
+        <Link to={`/track/${track.id}`} className="mt-6 text-[#FF1801] hover:underline">Back to Track</Link>
       </div>
     );
   }
@@ -347,16 +347,30 @@ function SessionDashboard() {
       <div className="relative bg-[#1a1a1a]/90 backdrop-blur-md border border-white/20 rounded-2xl overflow-hidden shadow-2xl">
         {/* Top Red Tab */}
         <div className="absolute top-0 left-0 bg-[#FF1801] text-white text-xs font-bold px-4 py-1.5 rounded-br-lg z-10 uppercase tracking-wider">
-          Tiempos de Vuelta
+          LAP TIMES
         </div>
 
         {/* Header Section */}
-        <div className="pt-12 pb-6 px-8 border-b border-white/10">
-          <h1 className="text-5xl font-black text-white tracking-tighter italic leading-none">FORMULA 1</h1>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-gray-400 text-sm"><Activity size={16} /></span>
-            <span className="text-white font-bold tracking-widest uppercase text-sm">{track.name}</span>
+        <div className="pt-12 pb-6 px-8 border-b border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-5xl font-black text-white tracking-tighter italic leading-none">FORMULA 1</h1>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-gray-400 text-sm"><Activity size={16} /></span>
+              <span className="text-white font-bold tracking-widest uppercase text-sm">{track.name}</span>
+            </div>
           </div>
+          {session && (
+            <div className="flex flex-col md:items-end text-gray-400 text-sm font-mono bg-black/30 px-4 py-2 rounded-lg border border-white/5">
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-[#FF1801]" />
+                <span>{session.date.split(' ')[0]}</span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <Clock size={14} className="text-[#FF1801]" />
+                <span>{session.date.split(' ')[1]}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Table Section */}
@@ -364,19 +378,19 @@ function SessionDashboard() {
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="text-white text-xs tracking-widest border-b border-white/10">
-                <th className="py-4 px-4 font-bold uppercase w-24">Vuelta</th>
-                <th className="py-4 px-4 font-bold uppercase">Sector 1</th>
-                <th className="py-4 px-4 font-bold uppercase">Sector 2</th>
-                <th className="py-4 px-4 font-bold uppercase">Sector 3</th>
-                <th className="py-4 px-4 font-bold uppercase">Tiempo de Vuelta</th>
-                <th className="py-4 px-4 font-bold uppercase text-center">Neumát.</th>
-                <th className="py-4 px-4 font-bold uppercase text-right">Desgaste</th>
+                <th className="py-4 px-4 font-bold uppercase w-24">LAP</th>
+                <th className="py-4 px-4 font-bold uppercase">SECTOR 1</th>
+                <th className="py-4 px-4 font-bold uppercase">SECTOR 2</th>
+                <th className="py-4 px-4 font-bold uppercase">SECTOR 3</th>
+                <th className="py-4 px-4 font-bold uppercase">LAP TIME</th>
+                <th className="py-4 px-4 font-bold uppercase text-center">TYRE</th>
+                <th className="py-4 px-4 font-bold uppercase text-right">WEAR</th>
               </tr>
             </thead>
             <tbody className="text-sm font-bold">
               {laps.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-500 font-normal">No hay vueltas registradas.</td>
+                  <td colSpan={7} className="py-8 text-center text-gray-500 font-normal">No laps recorded.</td>
                 </tr>
               ) : (
                 laps.map((lap, i) => {
