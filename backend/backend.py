@@ -252,41 +252,41 @@ def udp_listener():
                                     try:
                                         conn = sqlite3.connect(DB_PATH, timeout=5.0) # Explicit wait up to 5s
                                         c = conn.cursor()
-                                
-                                c.execute("INSERT INTO laps (session_id, lap_number, s1, s2, s3, total, compound, wear) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                                          (session_uid, lap_to_check, s1, s2, s3, lap_time_sec, current_tyre, round(current_tyre_wear, 2)))
-                                
-                                c.execute("SELECT best_lap FROM sessions WHERE id = ?", (session_uid,))
-                                row = c.fetchone()
-                                current_best = row[0] if row else '--:--.---'
-                                
-                                is_new_best = False
-                                if current_best == '--:--.---':
-                                    is_new_best = True
-                                else:
-                                    best_parts = current_best.split(':')
-                                    if len(best_parts) == 2:
-                                        best_sec = float(best_parts[0]) * 60 + float(best_parts[1])
-                                        if lap_time_sec < best_sec:
+                                        
+                                        c.execute("INSERT INTO laps (session_id, lap_number, s1, s2, s3, total, compound, wear) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                                  (session_uid, lap_to_check, s1, s2, s3, lap_time_sec, current_tyre, round(current_tyre_wear, 2)))
+                                        
+                                        c.execute("SELECT best_lap FROM sessions WHERE id = ?", (session_uid,))
+                                        row = c.fetchone()
+                                        current_best = row[0] if row else '--:--.---'
+                                        
+                                        is_new_best = False
+                                        if current_best == '--:--.---':
                                             is_new_best = True
-                                            
-                                new_best_str = lap_str if is_new_best else current_best
-                                
-                                c.execute("UPDATE sessions SET total_laps = ?, best_lap = ? WHERE id = ?", 
-                                          (len(recorded_laps) + 1, new_best_str, session_uid))
-                                
-                                conn.commit()
-                                conn.close()
-                                
-                                print(f"[*] Vuelta {lap_to_check} completada y registrada! Tiempo: {lap_str}")
-                                recorded_laps.add(lap_to_check)
-                            except Exception as e:
-                                print(f"[!] Error guardando vuelta {lap_to_check} en DB: {e}")
-                                # No añadimos a recorded_laps para reintentar en el próximo frame
-                        elif lap_to_check < completed_lap_num:
-                            # We completely bypassed this lap (e.g. invalid lap = 0 ms or flashback bug)
-                            # Mark it recorded so we don't hold the queue
-                            recorded_laps.add(lap_to_check)
+                                        else:
+                                            best_parts = current_best.split(':')
+                                            if len(best_parts) == 2:
+                                                best_sec = float(best_parts[0]) * 60 + float(best_parts[1])
+                                                if lap_time_sec < best_sec:
+                                                    is_new_best = True
+                                                    
+                                        new_best_str = lap_str if is_new_best else current_best
+                                        
+                                        c.execute("UPDATE sessions SET total_laps = ?, best_lap = ? WHERE id = ?", 
+                                                  (len(recorded_laps) + 1, new_best_str, session_uid))
+                                        
+                                        conn.commit()
+                                        conn.close()
+                                        
+                                        print(f"[*] Vuelta {lap_to_check} completada y registrada! Tiempo: {lap_str}")
+                                        recorded_laps.add(lap_to_check)
+                                    except Exception as e:
+                                        print(f"[!] Error guardando vuelta {lap_to_check} en DB: {e}")
+                                        # No añadimos a recorded_laps para reintentar en el próximo frame
+                                elif lap_to_check < completed_lap_num:
+                                    # We completely bypassed this lap (e.g. invalid lap = 0 ms or flashback bug)
+                                    # Mark it recorded so we don't hold the queue
+                                    recorded_laps.add(lap_to_check)
 
             # Packet ID 11: Session History
             elif packet_id == 11:
