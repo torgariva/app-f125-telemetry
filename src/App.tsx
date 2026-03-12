@@ -73,28 +73,36 @@ function Home() {
             <div 
               key={track.id}
               onClick={() => navigate(`/track/${track.id}`)}
-              className="bg-[#242424] border border-[#333] hover:border-[#FF1801] hover:bg-[#2a2a2a] transition-all p-5 rounded-xl cursor-pointer group relative overflow-hidden"
+              className="bg-[#050505] border border-[#151515] hover:border-[#333] hover:bg-[#0a0a0a] transition-all p-5 rounded-xl cursor-pointer group relative overflow-hidden flex flex-col min-h-[220px]"
             >
-              <div className="flex justify-between items-start mb-4 relative z-10">
-                <span className="text-xs font-mono text-gray-500 font-bold">R{track.round}</span>
-                <Flag size={16} className="text-gray-600 group-hover:text-[#FF1801] transition-colors" />
+              <div className="mb-3 relative z-10">
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Round {track.round}</span>
               </div>
-              <h3 className="text-lg font-bold text-white mb-1 relative z-10">{track.country}</h3>
-              <p className="text-xs text-gray-400 font-mono truncate relative z-10" title={track.name}>{track.name}</p>
               
-              <div className="mt-4 pt-4 border-t border-[#333] flex justify-between items-center relative z-10">
-                <span className="text-xs text-gray-500 uppercase">Sessions</span>
-                <span className={`text-sm font-mono font-bold ${count > 0 ? 'text-white' : 'text-gray-600'}`}>
-                  {count}
-                </span>
+              <div className="relative z-10 mb-6">
+                <h3 className="text-3xl font-black text-white tracking-tight mb-2 inline-block">{track.country}</h3>
+                <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide leading-relaxed max-w-[85%]">
+                  {track.name}
+                </p>
+              </div>
+              
+              <div className="mt-auto relative z-10">
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-2xl font-black ${count > 0 ? 'text-white' : 'text-gray-600'}`}>
+                    {count === 0 ? '0' : count < 10 ? `0${count}` : count}
+                  </span>
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+                    Sessions
+                  </span>
+                </div>
               </div>
 
               {/* Track Silhouette */}
-              <div className="absolute bottom-4 right-4 opacity-20 group-hover:opacity-40 transition-opacity w-24 h-24 flex items-end justify-end pointer-events-none">
+              <div className="absolute bottom-4 right-4 opacity-50 group-hover:opacity-100 transition-opacity w-28 h-28 flex items-end justify-end pointer-events-none">
                 <img 
                   src={`https://media.formula1.com/image/upload/f_auto,c_limit,w_1440,q_auto/f_auto/q_auto/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/${track.image}.png`}
                   alt={`${track.country} Track Layout`}
-                  className="max-w-full max-h-full object-contain"
+                  className="max-w-full max-h-full object-contain drop-shadow-lg"
                   referrerPolicy="no-referrer"
                 />
               </div>
@@ -255,7 +263,7 @@ const TyreBadge = ({ compound }: { compound: string }) => {
   else if (comp.includes('medium') || comp === 'c17') { borderColor = 'border-[#FCD700]'; textColor = 'text-[#FCD700]'; letter = 'M'; }
   else if (comp.includes('hard') || comp === 'c18') { borderColor = 'border-[#FFFFFF]'; textColor = 'text-[#FFFFFF]'; letter = 'H'; }
   else if (comp.includes('inter') || comp === 'c7') { borderColor = 'border-[#309f46]'; textColor = 'text-[#309f46]'; letter = 'I'; }
-  else if (comp.includes('wet') || comp === 'c8') { borderColor = 'border-[#0066FF]'; textColor = 'text-[#0066FF]'; letter = 'W'; }
+  else if (comp.includes('wet') || comp === 'c8') { borderColor = 'border-[#0a5b86]'; textColor = 'text-[#0a5b86]'; letter = 'W'; }
 
   return (
     <div className={`inline-flex items-center justify-center w-7 h-7 rounded-full border-[3px] ${borderColor} bg-[#1e1e1e] shadow-sm`}>
