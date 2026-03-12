@@ -241,11 +241,11 @@ const TyreBadge = ({ compound }: { compound: string }) => {
   if (!compound) return <span className="text-gray-500">-</span>;
 
   const comp = compound.toLowerCase();
-  if (comp.includes('soft')) { borderColor = 'border-[#FF2800]'; textColor = 'text-[#FF2800]'; letter = 'S'; }
-  else if (comp.includes('medium')) { borderColor = 'border-[#FCD700]'; textColor = 'text-[#FCD700]'; letter = 'M'; }
-  else if (comp.includes('hard')) { borderColor = 'border-[#FFFFFF]'; textColor = 'text-[#FFFFFF]'; letter = 'H'; }
-  else if (comp.includes('inter')) { borderColor = 'border-[#00D200]'; textColor = 'text-[#00D200]'; letter = 'I'; }
-  else if (comp.includes('wet')) { borderColor = 'border-[#0066FF]'; textColor = 'text-[#0066FF]'; letter = 'W'; }
+  if (comp.includes('soft') || comp === 'c16') { borderColor = 'border-[#FF2800]'; textColor = 'text-[#FF2800]'; letter = 'S'; }
+  else if (comp.includes('medium') || comp === 'c17') { borderColor = 'border-[#FCD700]'; textColor = 'text-[#FCD700]'; letter = 'M'; }
+  else if (comp.includes('hard') || comp === 'c18') { borderColor = 'border-[#FFFFFF]'; textColor = 'text-[#FFFFFF]'; letter = 'H'; }
+  else if (comp.includes('inter') || comp === 'c7') { borderColor = 'border-[#00D200]'; textColor = 'text-[#00D200]'; letter = 'I'; }
+  else if (comp.includes('wet') || comp === 'c8') { borderColor = 'border-[#0066FF]'; textColor = 'text-[#0066FF]'; letter = 'W'; }
 
   return (
     <div className={`inline-flex items-center justify-center w-7 h-7 rounded-full border-[3px] ${borderColor} bg-[#1e1e1e] shadow-sm`}>

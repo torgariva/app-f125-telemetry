@@ -130,7 +130,7 @@ def udp_listener():
                     status_size = (len(data) - 29) // 22
                     status_data_offset = 29 + (player_car_index * status_size)
                     
-                    visual_tyre_byte = struct.unpack_from('<B', data, status_data_offset + 31)[0]
+                    visual_tyre_byte = struct.unpack_from('<B', data, status_data_offset + 26)[0]
                     current_tyre = TYRE_MAP.get(visual_tyre_byte, f'C{visual_tyre_byte}')
                 except Exception as e:
                     print(f"[!] Error extrayendo neumático en Packet 7: {e}")
