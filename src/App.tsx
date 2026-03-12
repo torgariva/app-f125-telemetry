@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Activity, Timer, Settings, TrendingDown, BarChart3, ChevronLeft, MapPin, Flag, Calendar, Clock, CloudRain, Sun, Database, Trash2 } from 'lucide-react';
+import { Activity, Timer, Settings, TrendingDown, BarChart3, ChevronLeft, MapPin, Flag, Calendar, Clock, CloudRain, Sun, Database, Trash2, Search } from 'lucide-react';
 
 // API Configuration
 // In production, this should point to your Proxmox IP (e.g., http://192.168.1.100:8000)
@@ -122,6 +122,7 @@ function TrackSessions() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -157,12 +158,25 @@ function TrackSessions() {
     }
   };
 
+  const filteredSessions = sessions.filter(session => {
+    const search = searchTerm.toLowerCase();
+    return session.date.toLowerCase().includes(search) || session.type.toLowerCase().includes(search);
+  });
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return { day: '--', month: '---' };
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+    return { day, month };
+  };
+
   return (
     <div className="min-h-screen p-6 max-w-7xl mx-auto">
       <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-4 mb-2">
-            <Link to="/" className="text-gray-400 hover:text-white transition-colors bg-[#242424] p-2 rounded-lg border border-[#333] hover:border-[#FF1801]">
+            <Link to="/" className="text-gray-400 hover:text-white transition-colors bg-[#050505] p-2 rounded-lg border border-[#151515] hover:border-[#333]">
               <ChevronLeft size={20} />
             </Link>
             <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
@@ -173,6 +187,20 @@ function TrackSessions() {
             <MapPin size={14} className="text-[#FF1801]" />
             {track.name.toUpperCase()} | SESSIONS RECORDED: {sessions.length}
           </p>
+        </div>
+
+        {/* Search Input */}
+        <div className="relative w-full md:w-auto mt-4 md:mt-0">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={16} className="text-gray-500" />
+          </div>
+          <input 
+            type="text" 
+            placeholder="Filter by date or session..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-[#050505] border border-[#151515] text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:border-[#333] transition-colors w-full md:w-64 font-mono text-sm"
+          />
         </div>
       </header>
 
@@ -185,7 +213,7 @@ function TrackSessions() {
           {error} Make sure your backend container is running.
         </div>
       ) : sessions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-[#242424] border border-[#333] rounded-xl border-dashed">
+        <div className="flex flex-col items-center justify-center py-20 bg-[#050505] border border-[#151515] rounded-xl border-dashed">
           <Database size={48} className="text-gray-600 mb-4" />
           <h2 className="text-xl font-bold text-white mb-2">No sessions recorded yet</h2>
           <p className="text-gray-400 text-center max-w-md">
@@ -193,58 +221,67 @@ function TrackSessions() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sessions.map(session => (
-            <div
-              key={session.id}
-              onClick={() => navigate(`/track/${track.id}/session/${session.id}`)}
-              className="bg-[#242424] border border-[#333] hover:border-[#FF1801] hover:bg-[#2a2a2a] transition-all p-5 rounded-xl cursor-pointer group relative"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <span className={`text-sm font-bold text-white px-2 py-1 rounded ${
-                  session.type === 'Race' ? 'bg-[#FF1801]/20 text-[#FF1801]' : 
-                  session.type === 'Qualifying' ? 'bg-purple-500/20 text-purple-400' : 
-                  'bg-blue-500/20 text-blue-400'
-                }`}>
-                  {session.type}
-                </span>
-                <div className="flex items-center gap-3">
-                  {session.condition === 'Dry' ? (
-                    <Sun size={18} className="text-yellow-500" />
-                  ) : (
-                    <CloudRain size={18} className="text-blue-400" />
-                  )}
-                  <button 
-                    onClick={(e) => handleDelete(e, session.id)} 
-                    className="text-gray-500 hover:text-red-500 transition-colors z-10"
-                    title="Delete Session"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+        <div className="flex flex-col bg-[#050505] border border-[#151515] rounded-xl overflow-hidden">
+          {filteredSessions.map((session, index) => {
+            const { day, month } = formatDate(session.date);
+            const time = session.date.split(' ')[1]?.substring(0, 5) || '--:--';
+            
+            return (
+              <div
+                key={session.id}
+                onClick={() => navigate(`/track/${track.id}/session/${session.id}`)}
+                className={`flex items-center justify-between p-6 cursor-pointer hover:bg-[#0a0a0a] transition-colors group ${
+                  index !== filteredSessions.length - 1 ? 'border-b border-[#151515]' : ''
+                }`}
+              >
+                <div className="flex items-center gap-8">
+                  <div className="flex flex-col items-center justify-center min-w-[40px]">
+                    <span className="text-2xl font-black text-white leading-none">{day}</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{month}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-xl font-black text-white uppercase tracking-wide group-hover:text-gray-300 transition-colors">
+                      {session.type}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      {session.condition === 'Dry' ? (
+                        <Sun size={16} className="text-yellow-500" />
+                      ) : (
+                        <CloudRain size={16} className="text-blue-400" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-8">
+                  <div className="hidden md:flex flex-col items-end">
+                    <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Best Lap</span>
+                    <span className="text-sm font-mono font-bold text-gray-300">{session.bestLap}</span>
+                  </div>
+                  <div className="hidden md:flex flex-col items-end">
+                    <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Laps</span>
+                    <span className="text-sm font-mono font-bold text-gray-300">{session.laps}</span>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className="text-sm font-mono font-bold text-white">{time}</span>
+                    <button 
+                      onClick={(e) => handleDelete(e, session.id)} 
+                      className="text-gray-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Delete Session"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-gray-400 text-sm font-mono">
-                  <Calendar size={14} /> {session.date.split(' ')[0]}
-                </div>
-                <div className="flex items-center gap-2 text-gray-400 text-sm font-mono">
-                  <Clock size={14} /> {session.date.split(' ')[1]}
-                </div>
-              </div>
-              
-              <div className="mt-4 pt-4 border-t border-[#333] flex justify-between items-center">
-                <div className="flex flex-col">
-                  <span className="text-xs text-gray-500 uppercase">Best Lap</span>
-                  <span className="text-sm font-mono font-bold text-white">{session.bestLap}</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-gray-500 uppercase">Total Laps</span>
-                  <span className="text-sm font-mono font-bold text-white">{session.laps}</span>
-                </div>
-              </div>
+            );
+          })}
+          {filteredSessions.length === 0 && (
+            <div className="p-8 text-center text-gray-500 font-mono text-sm">
+              No sessions match your search.
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
