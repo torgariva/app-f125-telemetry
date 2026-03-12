@@ -234,21 +234,24 @@ function TrackSessions() {
 }
 
 const TyreBadge = ({ compound }: { compound: string }) => {
-  let color = 'border-gray-500 text-gray-500';
+  let borderColor = 'border-gray-500';
+  let textColor = 'text-gray-500';
   let letter = '?';
   
   if (!compound) return <span className="text-gray-500">-</span>;
 
   const comp = compound.toLowerCase();
-  if (comp.includes('soft')) { color = 'border-[#FF1801] text-[#FF1801]'; letter = 'S'; }
-  else if (comp.includes('medium')) { color = 'border-[#FFD100] text-[#FFD100]'; letter = 'M'; }
-  else if (comp.includes('hard')) { color = 'border-[#FFFFFF] text-[#FFFFFF]'; letter = 'H'; }
-  else if (comp.includes('inter')) { color = 'border-[#00D200] text-[#00D200]'; letter = 'I'; }
-  else if (comp.includes('wet')) { color = 'border-[#0066FF] text-[#0066FF]'; letter = 'W'; }
+  if (comp.includes('soft')) { borderColor = 'border-[#FF2800]'; textColor = 'text-[#FF2800]'; letter = 'S'; }
+  else if (comp.includes('medium')) { borderColor = 'border-[#FCD700]'; textColor = 'text-[#FCD700]'; letter = 'M'; }
+  else if (comp.includes('hard')) { borderColor = 'border-[#FFFFFF]'; textColor = 'text-[#FFFFFF]'; letter = 'H'; }
+  else if (comp.includes('inter')) { borderColor = 'border-[#00D200]'; textColor = 'text-[#00D200]'; letter = 'I'; }
+  else if (comp.includes('wet')) { borderColor = 'border-[#0066FF]'; textColor = 'text-[#0066FF]'; letter = 'W'; }
 
   return (
-    <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full border-2 ${color} font-black text-xs`}>
-      {letter}
+    <div className={`inline-flex items-center justify-center w-7 h-7 rounded-full border-[3px] ${borderColor} bg-[#1e1e1e] shadow-sm`}>
+      <span className={`font-black text-[14px] leading-none ${textColor}`}>
+        {letter}
+      </span>
     </div>
   );
 };
