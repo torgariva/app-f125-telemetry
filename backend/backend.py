@@ -250,6 +250,74 @@ def udp_listener():
                             # Mark it recorded so we don't hold the queue
                             recorded_laps.add(lap_to_check)
 
+            # Packet ID 11: Session History
+            elif packet_id == 11:
+                if len(data) < 36:
+                    continue
+                car_idx = struct.unpack_from('<B', data, 29)[0]
+                if car_idx == player_car_index:
+                    num_laps = struct.unpack_from('<B', data, 30)[0]
+                    
+                    for i in range(num_laps):
+                        lap_num = i + 1
+                        if lap_num not in recorded_laps:
+                            offset = 36 + (i * 14)
+                            if len(data) < offset + 14:
+                                break
+                            
+                            lap_time_ms = struct.unpack_from('<I', data, offset)[0]
+                            
+                            if lap_time_ms > 0:
+                                s1_ms = struct.unpack_from('<H', data, offset + 4)[0]
+                                s1_min = struct.unpack_from('<B', data, offset + 6)[0]
+                                s2_ms = struct.unpack_from('<H', data, offset + 7)[0]
+                                s2_min = struct.unpack_from('<B', data, offset + 9)[0]
+                                s3_ms = struct.unpack_from('<H', data, offset + 10)[0]
+                                s3_min = struct.unpack_from('<B', data, offset + 12)[0]
+                                
+                                s1_time = s1_min * 60 + s1_ms / 1000.0
+                                s2_time = s2_min * 60 + s2_ms / 1000.0
+                                s3_time = s3_min * 60 + s3_ms / 1000.0
+                                lap_time_sec = lap_time_ms / 1000.0
+                                
+                                minutes = int(lap_time_sec // 60)
+                                seconds = lap_time_sec % 60
+                                lap_str = f"{minutes}:{seconds:06.3f}"
+                                
+                                try:
+                                    conn = sqlite3.connect(DB_PATH, timeout=5.0)
+                                    c = conn.cursor()
+                                    
+                                    c.execute("INSERT INTO laps (session_id, lap_number, s1, s2, s3, total, compound, wear) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                              (session_uid, lap_num, s1_time, s2_time, s3_time, lap_time_sec, current_tyre, round(current_tyre_wear, 2)))
+                                    
+                                    c.execute("SELECT best_lap FROM sessions WHERE id = ?", (session_uid,))
+                                    row = c.fetchone()
+                                    current_best = row[0] if row else '--:--.---'
+                                    
+                                    is_new_best = False
+                                    if current_best == '--:--.---':
+                                        is_new_best = True
+                                    else:
+                                        best_parts = current_best.split(':')
+                                        if len(best_parts) == 2:
+                                            best_sec = float(best_parts[0]) * 60 + float(best_parts[1])
+                                            if lap_time_sec < best_sec:
+                                                is_new_best = True
+                                                
+                                    new_best_str = lap_str if is_new_best else current_best
+                                    
+                                    c.execute("UPDATE sessions SET total_laps = ?, best_lap = ? WHERE id = ?", 
+                                              (len(recorded_laps) + 1, new_best_str, session_uid))
+                                    
+                                    conn.commit()
+                                    conn.close()
+                                    
+                                    print(f"[*] Vuelta {lap_num} completada y registrada (Historial)! Tiempo: {lap_str}")
+                                    recorded_laps.add(lap_num)
+                                except Exception as e:
+                                    print(f"[!] Error guardando vuelta {lap_num} en DB: {e}")
+
         except Exception as e:
             import traceback
             print(f"ERROR procesando UDP: {e}")
