@@ -39,7 +39,9 @@ TRACK_MAP = {
 SESSION_TYPE_MAP = {
     0: 'Unknown', 1: 'Practice 1', 2: 'Practice 2', 3: 'Practice 3', 4: 'Short Practice',
     5: 'Qualifying 1', 6: 'Qualifying 2', 7: 'Qualifying 3', 8: 'Short Qualifying', 9: 'OSQ',
-    10: 'Race', 11: 'Race 2', 12: 'Race 3', 13: 'Time Trial'
+    10: 'Race', 11: 'Race 2', 12: 'Race 3', 13: 'Time Trial',
+    14: 'Sprint Shootout 1', 15: 'Sprint Shootout 2', 16: 'Sprint Shootout 3',
+    17: 'Short Sprint Shootout', 18: 'OS Sprint Shootout'
 }
 
 # Tipos de neumáticos visuales (Packet 7)
@@ -77,7 +79,7 @@ def udp_listener():
     
     current_session_uid = None
     current_track_id = 'bahrain'
-    current_session_type = 'Time Trial'
+    current_session_type = 'Unknown'
     recorded_laps = set()
     session_state = {} # lap_num -> {'s1': 0, 's2': 0}
     all_cars_state = {i: {'lap_num': 0, 's1': 0, 's2': 0} for i in range(22)}
@@ -115,18 +117,18 @@ def udp_listener():
                 new_track_id = TRACK_MAP.get(track_id_int, f'unknown_{track_id_int}')
                 
                 session_type_id = struct.unpack_from('<B', data, 35)[0]
-                new_session_type = SESSION_TYPE_MAP.get(session_type_id, 'Time Trial')
+                new_session_type = SESSION_TYPE_MAP.get(session_type_id, f'Unknown ({session_type_id})')
                 
                 # Actualizar la base de datos solo si el circuito o el tipo cambian
                 if current_session_uid and (current_track_id != new_track_id or current_session_type != new_session_type):
-                    current_track_id = new_track_id
-                    current_session_type = new_session_type
                     try:
                         conn = sqlite3.connect(DB_PATH)
                         c = conn.cursor()
-                        c.execute("UPDATE sessions SET track_id = ?, type = ? WHERE id = ?", (current_track_id, current_session_type, current_session_uid))
+                        c.execute("UPDATE sessions SET track_id = ?, type = ? WHERE id = ?", (new_track_id, new_session_type, current_session_uid))
                         conn.commit()
                         conn.close()
+                        current_track_id = new_track_id
+                        current_session_type = new_session_type
                     except sqlite3.OperationalError:
                         pass # Ignore lock, we'll try later or next session update
                 else:
