@@ -14,29 +14,28 @@ const formatSessionType = (type: string) => {
   if (!type) return '';
   const upperType = type.toUpperCase();
   
+  // Format all race sessions (Race, Race 2, Race 3, and Sprint Shootout which the game uses for 5-lap races) as RACE
+  if (upperType.includes('RACE') || upperType.includes('SPRINT SHOOTOUT')) {
+    return 'RACE';
+  }
+
   // Format all qualifying and shootout sessions as QUALIFYING
   if (
     upperType.includes('QUALIFYING') || 
     upperType.includes('OSQ') || 
     upperType.includes('SHORT Q') ||
-    upperType.includes('SHOOTOUT') ||
     upperType === 'QUALI'
   ) {
-    return `QUALIFYING (${type})`;
-  }
-  
-  // Format all race sessions (Race, Race 2, Race 3) as RACE
-  if (upperType.includes('RACE')) {
-    return `RACE (${type})`;
+    return 'QUALIFYING';
   }
   
   // Format practice sessions
   if (upperType.includes('PRACTICE')) {
-    return `PRACTICE (${type})`;
+    return 'PRACTICE';
   }
   
   // If the game specifically sends Time Trial, we leave it as TIME TRIAL
-  return `${upperType} (${type})`;
+  return upperType;
 };
 
 const tracks = [
