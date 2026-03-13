@@ -382,14 +382,35 @@ def startup_event():
 @app.get("/api/sessions/summary")
 def get_sessions_summary():
     conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute("SELECT track_id, COUNT(*) FROM sessions GROUP BY track_id")
+    c.execute("SELECT track_id, best_lap FROM sessions")
     rows = c.fetchall()
     conn.close()
     
     result = {}
     for r in rows:
-        result[r[0]] = r[1]
+        tid = r["track_id"]
+        bl = r["best_lap"]
+        
+        if tid not in result:
+            result[tid] = {"count": 0, "best_lap": None, "_best_sec": float('inf')}
+            
+        result[tid]["count"] += 1
+        
+        if bl and bl != '--:--.---':
+            try:
+                m, s = bl.split(':')
+                time_sec = int(m) * 60 + float(s)
+                if time_sec < result[tid]["_best_sec"]:
+                    result[tid]["_best_sec"] = time_sec
+                    result[tid]["best_lap"] = bl
+            except Exception:
+                pass
+                
+    for tid in result:
+        del result[tid]["_best_sec"]
+        
     return result
 
 @app.get("/api/sessions/{track_id}")

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Activity, Timer, Settings, TrendingDown, BarChart3, ChevronLeft, MapPin, Flag, Calendar, Clock, CloudRain, Sun, Database, Trash2, Search } from 'lucide-react';
@@ -59,7 +59,7 @@ const tracks = [
 
 function Home() {
   const navigate = useNavigate();
-  const [sessionCounts, setSessionCounts] = useState<Record<string, number>>({});
+  const [sessionCounts, setSessionCounts] = useState<Record<string, { count: number, best_lap: string | null }>>({});
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/sessions/summary`)
@@ -87,7 +87,9 @@ function Home() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {tracks.map((track) => {
-          const count = sessionCounts[track.id] || 0;
+          const trackData = sessionCounts[track.id] || { count: 0, best_lap: null };
+          const count = trackData.count;
+          const bestLap = trackData.best_lap;
           
           return (
             <div 
@@ -122,6 +124,12 @@ function Home() {
                     Sessions
                   </span>
                 </div>
+                {bestLap && (
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <Timer size={12} className="text-[#FF1801]" />
+                    <span className="text-xs font-mono font-bold text-gray-300">{bestLap}</span>
+                  </div>
+                )}
               </div>
 
               {/* Track Silhouette */}
@@ -210,6 +218,21 @@ function TrackSessions() {
     return { day, month };
   };
 
+  const bestLap = useMemo(() => {
+    const validLaps = sessions
+      .filter(s => s.best_lap && s.best_lap !== '--:--.---')
+      .map(s => {
+        const [min, sec] = s.best_lap.split(':');
+        return {
+          str: s.best_lap,
+          time: parseInt(min) * 60 + parseFloat(sec)
+        };
+      })
+      .sort((a, b) => a.time - b.time);
+      
+    return validLaps.length > 0 ? validLaps[0].str : null;
+  }, [sessions]);
+
   return (
     <div className="min-h-screen p-6 max-w-7xl mx-auto">
       <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -233,6 +256,12 @@ function TrackSessions() {
             <MapPin size={14} className="text-[#FF1801]" />
             {track.name.toUpperCase()} | SESSIONS RECORDED: {sessions.length}
           </p>
+          {bestLap && (
+            <p className="text-gray-400 mt-1 font-mono text-sm flex items-center gap-2">
+              <Timer size={14} className="text-[#FF1801]" />
+              ALL-TIME BEST: <span className="text-white font-bold">{bestLap}</span>
+            </p>
+          )}
         </div>
 
         {/* Search Input */}
