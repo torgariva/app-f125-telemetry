@@ -515,102 +515,115 @@ function SessionDashboard() {
   };
 
   return (
-    <div className="min-h-screen p-6 max-w-6xl mx-auto font-f1">
-      <header className="mb-6 flex items-center justify-between">
-        <Link to={`/track/${track.id}`} className="text-gray-400 hover:text-white transition-colors bg-[#242424] p-2 rounded-lg border border-[#333] hover:border-[#FF1801]">
-          <ChevronLeft size={20} />
-        </Link>
-      </header>
-
-      <div className="relative bg-[#1a1a1a]/90 backdrop-blur-md border border-white/20 rounded-2xl overflow-hidden shadow-2xl">
-        {/* Top Red Tab */}
-        <div className="absolute top-0 left-0 bg-[#FF1801] text-white text-xs font-bold px-4 py-1.5 rounded-br-lg z-10 uppercase tracking-wider">
-          {session ? formatSessionType(session.type) : 'LAP TIMES'}
+    <div className="min-h-screen p-6 max-w-7xl mx-auto font-f1">
+      <header className="mb-12">
+        <div className="flex items-center gap-4 mb-4">
+          <Link to={`/track/${track.id}`} className="text-gray-400 hover:text-white transition-colors bg-[#1a1a1a] p-2 rounded-lg border border-white/5 hover:border-[#FF1801]">
+            <ChevronLeft size={24} />
+          </Link>
+          <h1 className="text-5xl font-black text-white uppercase tracking-tight">
+            {session ? formatSessionType(session.type) : 'SESSION DETAILS'}
+          </h1>
         </div>
-
-        {/* Header Section */}
-        <div className="pt-12 pb-6 px-8 border-b border-white/10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-5xl font-black text-white tracking-tighter italic leading-none">FORMULA 1</h1>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-gray-400 text-sm"><Activity size={16} /></span>
-              <span className="text-white font-bold tracking-widest uppercase text-sm">{track.name}</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-6 text-gray-400 font-medium">
+          <span className="flex items-center gap-2"><MapPin size={18} className="text-[#FF1801]" /> {track.name}</span>
           {session && (
-            <div className="flex flex-col md:items-end text-gray-400 text-sm font-mono bg-black/30 px-4 py-2 rounded-lg border border-white/5">
-              <div className="flex items-center gap-2">
-                <Calendar size={14} className="text-[#FF1801]" />
-                <span>{session.date.split(' ')[0]}</span>
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <Clock size={14} className="text-[#FF1801]" />
-                <span>{session.date.split(' ')[1]}</span>
-              </div>
-            </div>
+            <>
+              <span className="flex items-center gap-2"><Calendar size={18} className="text-[#FF1801]" /> {session.date.split(' ')[0]}</span>
+              <span className="flex items-center gap-2"><Clock size={18} className="text-[#FF1801]" /> {session.date.split(' ')[1]}</span>
+            </>
           )}
         </div>
+      </header>
 
-        {/* Table Section */}
-        <div className="px-4 pb-4 overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="text-white text-xs tracking-widest border-b border-white/10">
-                <th className="py-4 px-4 font-bold uppercase w-24">LAP</th>
-                <th className="py-4 px-4 font-bold uppercase">SECTOR 1</th>
-                <th className="py-4 px-4 font-bold uppercase">SECTOR 2</th>
-                <th className="py-4 px-4 font-bold uppercase">SECTOR 3</th>
-                <th className="py-4 px-4 font-bold uppercase">LAP TIME</th>
-                <th className="py-4 px-4 font-bold uppercase text-center">TYRE</th>
-                <th className="py-4 px-4 font-bold uppercase text-right">WEAR</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm font-bold">
-              {laps.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-500 font-normal">No laps recorded.</td>
-                </tr>
-              ) : (
-                laps.map((lap, i) => {
-                  const isPersonalBestLap = lap.total === bestLap.val;
-                  const isPersonalBestS1 = lap.s1 === bestS1.val;
-                  const isPersonalBestS2 = lap.s2 === bestS2.val;
-                  const isPersonalBestS3 = lap.s3 === bestS3.val;
-
-                  // Check against overall session bests (from all drivers)
-                  const isOverallBestLap = session?.best_lap_overall && Math.abs(lap.total - session.best_lap_overall) < 0.002;
-                  const isOverallBestS1 = session?.best_s1 && Math.abs(lap.s1 - session.best_s1) < 0.002;
-                  const isOverallBestS2 = session?.best_s2 && Math.abs(lap.s2 - session.best_s2) < 0.002;
-                  const isOverallBestS3 = session?.best_s3 && Math.abs(lap.s3 - session.best_s3) < 0.002;
-
-                  return (
-                    <tr key={lap.lap} className="border-b border-white/5 hover:bg-white/10 hover:outline hover:outline-1 hover:outline-white transition-all cursor-default group">
-                      <td className="py-3 px-4 text-white">{lap.lap}</td>
-                      <td className={`py-3 px-4 ${isOverallBestS1 ? 'text-[#b82ee6]' : isPersonalBestS1 ? 'text-[#4db721]' : 'text-white'}`}>
-                        {formatSector(lap.s1)}
-                      </td>
-                      <td className={`py-3 px-4 ${isOverallBestS2 ? 'text-[#b82ee6]' : isPersonalBestS2 ? 'text-[#4db721]' : 'text-white'}`}>
-                        {formatSector(lap.s2)}
-                      </td>
-                      <td className={`py-3 px-4 ${isOverallBestS3 ? 'text-[#b82ee6]' : isPersonalBestS3 ? 'text-[#4db721]' : 'text-white'}`}>
-                        {formatSector(lap.s3)}
-                      </td>
-                      <td className={`py-3 px-4 ${isOverallBestLap ? 'text-[#b82ee6]' : isPersonalBestLap ? 'text-[#4db721]' : 'text-white'}`}>
-                        {formatTime(lap.total)}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <TyreBadge compound={lap.compound} />
-                      </td>
-                      <td className="py-3 px-4 text-gray-400 font-mono text-xs text-right">
-                        {lap.wear ? `${lap.wear}%` : '-'}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+      <div className="flex flex-col bg-[#050505] border border-[#151515] rounded-xl overflow-hidden shadow-2xl">
+        {/* Header Row for columns */}
+        <div className="hidden md:grid grid-cols-12 gap-4 p-6 border-b border-[#151515] text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[#0a0a0a]">
+          <div className="col-span-1 text-center">Lap</div>
+          <div className="col-span-2">Sector 1</div>
+          <div className="col-span-2">Sector 2</div>
+          <div className="col-span-2">Sector 3</div>
+          <div className="col-span-2">Lap Time</div>
+          <div className="col-span-2 text-center">Tyre</div>
+          <div className="col-span-1 text-right">Wear</div>
         </div>
+
+        {laps.length === 0 ? (
+          <div className="p-8 text-center text-gray-500 font-mono text-sm">
+            No laps recorded.
+          </div>
+        ) : (
+          laps.map((lap, index) => {
+            const isPersonalBestLap = lap.total === bestLap.val;
+            const isPersonalBestS1 = lap.s1 === bestS1.val;
+            const isPersonalBestS2 = lap.s2 === bestS2.val;
+            const isPersonalBestS3 = lap.s3 === bestS3.val;
+
+            // Check against overall session bests (from all drivers)
+            const isOverallBestLap = session?.best_lap_overall && Math.abs(lap.total - session.best_lap_overall) < 0.002;
+            const isOverallBestS1 = session?.best_s1 && Math.abs(lap.s1 - session.best_s1) < 0.002;
+            const isOverallBestS2 = session?.best_s2 && Math.abs(lap.s2 - session.best_s2) < 0.002;
+            const isOverallBestS3 = session?.best_s3 && Math.abs(lap.s3 - session.best_s3) < 0.002;
+
+            return (
+              <div
+                key={lap.lap}
+                className={`grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-6 hover:bg-[#0a0a0a] transition-colors group ${
+                  index !== laps.length - 1 ? 'border-b border-[#151515]' : ''
+                }`}
+              >
+                {/* LAP NUMBER */}
+                <div className="col-span-1 flex items-center justify-center">
+                  <div className="flex flex-col items-center justify-center w-12 h-12 bg-black/50 rounded-lg border border-white/5 group-hover:border-[#FF1801]/30 transition-colors">
+                    <span className="text-xl font-black text-white">{lap.lap}</span>
+                  </div>
+                </div>
+
+                {/* SECTORS */}
+                <div className="col-span-2 flex flex-col">
+                  <span className="md:hidden text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Sector 1</span>
+                  <span className={`text-lg font-mono font-bold ${isOverallBestS1 ? 'text-[#b82ee6]' : isPersonalBestS1 ? 'text-[#4db721]' : 'text-gray-300'}`}>
+                    {formatSector(lap.s1)}
+                  </span>
+                </div>
+                <div className="col-span-2 flex flex-col">
+                  <span className="md:hidden text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Sector 2</span>
+                  <span className={`text-lg font-mono font-bold ${isOverallBestS2 ? 'text-[#b82ee6]' : isPersonalBestS2 ? 'text-[#4db721]' : 'text-gray-300'}`}>
+                    {formatSector(lap.s2)}
+                  </span>
+                </div>
+                <div className="col-span-2 flex flex-col">
+                  <span className="md:hidden text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Sector 3</span>
+                  <span className={`text-lg font-mono font-bold ${isOverallBestS3 ? 'text-[#b82ee6]' : isPersonalBestS3 ? 'text-[#4db721]' : 'text-gray-300'}`}>
+                    {formatSector(lap.s3)}
+                  </span>
+                </div>
+
+                {/* TOTAL TIME */}
+                <div className="col-span-2 flex flex-col">
+                  <span className="md:hidden text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Lap Time</span>
+                  <span className={`text-xl font-mono font-black ${isOverallBestLap ? 'text-[#b82ee6]' : isPersonalBestLap ? 'text-[#4db721]' : 'text-white'}`}>
+                    {formatTime(lap.total)}
+                  </span>
+                </div>
+
+                {/* TYRE */}
+                <div className="col-span-2 flex justify-start md:justify-center items-center">
+                  <span className="md:hidden text-[10px] text-gray-500 uppercase font-bold tracking-wider mr-4">Tyre</span>
+                  <TyreBadge compound={lap.compound} />
+                </div>
+
+                {/* WEAR */}
+                <div className="col-span-1 flex justify-start md:justify-end items-center">
+                  <span className="md:hidden text-[10px] text-gray-500 uppercase font-bold tracking-wider mr-4">Wear</span>
+                  <span className="text-sm font-mono font-bold text-gray-500">
+                    {lap.wear ? `${lap.wear}%` : '-'}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
