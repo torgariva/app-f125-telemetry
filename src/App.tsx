@@ -14,19 +14,28 @@ const formatSessionType = (type: string) => {
   if (!type) return '';
   const upperType = type.toUpperCase();
   
-  // Format standard qualifying sessions
-  if (upperType.includes('QUALIFYING') || upperType === 'OSQ' || upperType === 'SHORT Q') {
-    return 'QUALI';
+  // Format all qualifying and shootout sessions as QUALIFYING
+  if (
+    upperType.includes('QUALIFYING') || 
+    upperType.includes('OSQ') || 
+    upperType.includes('SHORT Q') ||
+    upperType.includes('SHOOTOUT') ||
+    upperType === 'QUALI'
+  ) {
+    return 'QUALIFYING';
   }
   
-  // Format practice sessions (e.g., "Practice 1" -> "FP 1")
+  // Format all race sessions (Race, Race 2, Race 3) as RACE
+  if (upperType.includes('RACE')) {
+    return 'RACE';
+  }
+  
+  // Format practice sessions
   if (upperType.includes('PRACTICE')) {
-    return upperType.replace('PRACTICE', 'FP');
+    return 'PRACTICE';
   }
   
   // If the game specifically sends Time Trial, we leave it as TIME TRIAL
-  // (or you can change this to return 'RACE' if you still want to force it)
-  
   return upperType;
 };
 
