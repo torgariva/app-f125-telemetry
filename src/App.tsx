@@ -10,6 +10,26 @@ const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8000' 
   : `http://${window.location.hostname}:8000`;
 
+const formatSessionType = (type: string) => {
+  if (!type) return '';
+  const upperType = type.toUpperCase();
+  
+  // Format standard qualifying sessions
+  if (upperType.includes('QUALIFYING') || upperType === 'OSQ' || upperType === 'SHORT Q') {
+    return 'QUALI';
+  }
+  
+  // Format practice sessions (e.g., "Practice 1" -> "FP 1")
+  if (upperType.includes('PRACTICE')) {
+    return upperType.replace('PRACTICE', 'FP');
+  }
+  
+  // If the game specifically sends Time Trial, we leave it as TIME TRIAL
+  // (or you can change this to return 'RACE' if you still want to force it)
+  
+  return upperType;
+};
+
 const tracks = [
   { id: 'australia', country: 'Australia', name: 'Albert Park Circuit', round: 1, image: 'Australia', countryCode: 'au' },
   { id: 'china', country: 'China', name: 'Shanghai International Circuit', round: 2, image: 'China', countryCode: 'cn' },
@@ -176,7 +196,10 @@ function TrackSessions() {
 
   const filteredSessions = sessions.filter(session => {
     const search = searchTerm.toLowerCase();
-    return session.date.toLowerCase().includes(search) || session.type.toLowerCase().includes(search);
+    const displayType = formatSessionType(session.type).toLowerCase();
+    return session.date.toLowerCase().includes(search) || 
+           session.type.toLowerCase().includes(search) ||
+           displayType.includes(search);
   });
 
   const formatDate = (dateString: string) => {
@@ -265,7 +288,7 @@ function TrackSessions() {
                   
                   <div className="flex items-center gap-4">
                     <h3 className="text-xl font-black text-white uppercase tracking-wide group-hover:text-gray-300 transition-colors">
-                      {session.type === 'Time Trial' ? 'Race' : session.type}
+                      {formatSessionType(session.type)}
                     </h3>
                     <div className="flex items-center gap-2">
                       {session.condition === 'Dry' ? (
@@ -465,7 +488,7 @@ function SessionDashboard() {
       <div className="relative bg-[#1a1a1a]/90 backdrop-blur-md border border-white/20 rounded-2xl overflow-hidden shadow-2xl">
         {/* Top Red Tab */}
         <div className="absolute top-0 left-0 bg-[#FF1801] text-white text-xs font-bold px-4 py-1.5 rounded-br-lg z-10 uppercase tracking-wider">
-          LAP TIMES
+          {session ? formatSessionType(session.type) : 'LAP TIMES'}
         </div>
 
         {/* Header Section */}
