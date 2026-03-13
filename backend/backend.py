@@ -36,6 +36,12 @@ TRACK_MAP = {
     27: 'imola', 28: 'portimao', 29: 'saudi', 30: 'miami', 31: 'vegas', 32: 'qatar'
 }
 
+SESSION_TYPE_MAP = {
+    0: 'Unknown', 1: 'Practice 1', 2: 'Practice 2', 3: 'Practice 3', 4: 'Short Practice',
+    5: 'Qualifying 1', 6: 'Qualifying 2', 7: 'Qualifying 3', 8: 'Short Qualifying', 9: 'OSQ',
+    10: 'Race', 11: 'Race 2', 12: 'Race 3', 13: 'Time Trial'
+}
+
 # Tipos de neumáticos visuales (Packet 7)
 TYRE_MAP = {
     16: 'Soft', 17: 'Medium', 18: 'Hard', 7: 'Inter', 8: 'Wet',
@@ -71,6 +77,7 @@ def udp_listener():
     
     current_session_uid = None
     current_track_id = 'bahrain'
+    current_session_type = 'Time Trial'
     recorded_laps = set()
     session_state = {} # lap_num -> {'s1': 0, 's2': 0}
     all_cars_state = {i: {'lap_num': 0, 's1': 0, 's2': 0} for i in range(22)}
@@ -107,19 +114,24 @@ def udp_listener():
                 track_id_int = struct.unpack_from('<b', data, 36)[0]
                 new_track_id = TRACK_MAP.get(track_id_int, f'unknown_{track_id_int}')
                 
-                # Actualizar la base de datos solo si el circuito cambia
-                if current_session_uid and current_track_id != new_track_id:
+                session_type_id = struct.unpack_from('<B', data, 35)[0]
+                new_session_type = SESSION_TYPE_MAP.get(session_type_id, 'Time Trial')
+                
+                # Actualizar la base de datos solo si el circuito o el tipo cambian
+                if current_session_uid and (current_track_id != new_track_id or current_session_type != new_session_type):
                     current_track_id = new_track_id
+                    current_session_type = new_session_type
                     try:
                         conn = sqlite3.connect(DB_PATH)
                         c = conn.cursor()
-                        c.execute("UPDATE sessions SET track_id = ? WHERE id = ?", (current_track_id, current_session_uid))
+                        c.execute("UPDATE sessions SET track_id = ?, type = ? WHERE id = ?", (current_track_id, current_session_type, current_session_uid))
                         conn.commit()
                         conn.close()
                     except sqlite3.OperationalError:
                         pass # Ignore lock, we'll try later or next session update
                 else:
                     current_track_id = new_track_id
+                    current_session_type = new_session_type
 
             # Inicializar nueva sesión en BD
             if session_uid != current_session_uid:
@@ -132,10 +144,10 @@ def udp_listener():
                 conn = sqlite3.connect(DB_PATH)
                 c = conn.cursor()
                 c.execute("INSERT OR IGNORE INTO sessions (id, track_id, date, type, best_lap, total_laps, condition) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                          (session_uid, current_track_id, current_time, 'Time Trial', '--:--.---', 0, current_weather))
+                          (session_uid, current_track_id, current_time, current_session_type, '--:--.---', 0, current_weather))
                 conn.commit()
                 conn.close()
-                print(f"[*] Nueva sesión detectada: {session_uid} en {current_track_id} a las {current_time} con Clima: {current_weather}")
+                print(f"[*] Nueva sesión detectada: {session_uid} en {current_track_id} ({current_session_type}) a las {current_time} con Clima: {current_weather}")
 
             # Packet ID 7: Car Status
             elif packet_id == 7:
