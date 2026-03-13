@@ -130,6 +130,8 @@ function TrackSessions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -149,19 +151,26 @@ function TrackSessions() {
       });
   }, [trackId]);
 
-  const handleDelete = async (e: React.MouseEvent, sessionId: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this session?')) return;
-    
+    setSessionToDelete(sessionId);
+  };
+
+  const confirmDelete = async () => {
+    if (!sessionToDelete) return;
+    setIsDeleting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/sessions/${sessionToDelete}`, {
         method: 'DELETE'
       });
       if (res.ok) {
-        setSessions(sessions.filter(s => s.id !== sessionId));
+        setSessions(sessions.filter(s => s.id !== sessionToDelete));
       }
     } catch (err) {
       console.error("Failed to delete session", err);
+    } finally {
+      setIsDeleting(false);
+      setSessionToDelete(null);
     }
   };
 
@@ -280,7 +289,7 @@ function TrackSessions() {
                   <div className="flex items-center gap-6">
                     <span className="text-sm font-mono font-bold text-white">{time}</span>
                     <button 
-                      onClick={(e) => handleDelete(e, session.id)} 
+                      onClick={(e) => handleDeleteClick(e, session.id)} 
                       className="text-gray-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                       title="Delete Session"
                     >
@@ -296,6 +305,43 @@ function TrackSessions() {
               No sessions match your search.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {sessionToDelete && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => !isDeleting && setSessionToDelete(null)}>
+          <div 
+            className="bg-[#151515] border border-[#333] rounded-xl p-8 max-w-md w-full shadow-2xl transform transition-all"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                <Trash2 size={24} className="text-[#FF1801]" />
+              </div>
+              <h3 className="text-2xl font-black text-white uppercase tracking-tight">Delete Session</h3>
+            </div>
+            <p className="text-gray-400 mb-8 leading-relaxed">
+              Are you sure you want to delete this session? This action cannot be undone and all telemetry data will be permanently lost.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setSessionToDelete(null)}
+                disabled={isDeleting}
+                className="px-5 py-2.5 rounded-lg font-bold text-white bg-[#242424] hover:bg-[#333] transition-colors disabled:opacity-50"
+              >
+                CANCEL
+              </button>
+              <button 
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="px-5 py-2.5 rounded-lg font-bold text-white bg-[#FF1801] hover:bg-[#D11401] transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? <Activity size={18} className="animate-spin" /> : null}
+                {isDeleting ? 'DELETING...' : 'DELETE'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
