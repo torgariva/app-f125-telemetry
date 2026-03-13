@@ -22,21 +22,21 @@ const formatSessionType = (type: string) => {
     upperType.includes('SHOOTOUT') ||
     upperType === 'QUALI'
   ) {
-    return 'QUALIFYING';
+    return `QUALIFYING (${type})`;
   }
   
   // Format all race sessions (Race, Race 2, Race 3) as RACE
   if (upperType.includes('RACE')) {
-    return 'RACE';
+    return `RACE (${type})`;
   }
   
   // Format practice sessions
   if (upperType.includes('PRACTICE')) {
-    return 'PRACTICE';
+    return `PRACTICE (${type})`;
   }
   
   // If the game specifically sends Time Trial, we leave it as TIME TRIAL
-  return upperType;
+  return `${upperType} (${type})`;
 };
 
 const tracks = [
