@@ -4,12 +4,15 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Activity, Timer, Settings, TrendingDown, BarChart3, ChevronLeft, MapPin, Flag, Calendar, Clock, CloudRain, Sun, Database, Trash2, Search } from 'lucide-react';
 
 // API Configuration
-// If we are accessing via port 3000 (direct access), we assume backend is on port 8000.
-// If we are accessing via a reverse proxy (usually port 80 or 443), we use relative paths
-// so that Nginx can handle the routing to the backend.
-const API_BASE_URL = (window.location.port === '3000' || window.location.hostname === 'localhost')
-  ? `http://${window.location.hostname}:8000`
-  : ''; // Relative path for production/reverse proxy setups
+// We detect if we are on localhost or a direct IP access to use port 8000.
+// If we are on a domain name (reverse proxy), we use relative paths.
+const isDirectAccess = window.location.port === '3000' || 
+                      window.location.hostname === 'localhost' || 
+                      /^\d+\.\d+\.\d+\.\d+$/.test(window.location.hostname);
+
+const API_BASE_URL = isDirectAccess 
+  ? `${window.location.protocol}//${window.location.hostname}:8000` 
+  : ''; // Relative path for Nginx reverse proxy setups
 
 const formatSessionType = (type: string) => {
   if (!type) return '';
