@@ -4,11 +4,12 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Activity, Timer, Settings, TrendingDown, BarChart3, ChevronLeft, MapPin, Flag, Calendar, Clock, CloudRain, Sun, Database, Trash2, Search } from 'lucide-react';
 
 // API Configuration
-// In production, this should point to your Proxmox IP (e.g., http://192.168.1.100:8000)
-// For local development, we use the relative path which Vite proxies, or fallback to localhost
-const API_BASE_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:8000' 
-  : `http://${window.location.hostname}:8000`;
+// If we are accessing via port 3000 (direct access), we assume backend is on port 8000.
+// If we are accessing via a reverse proxy (usually port 80 or 443), we use relative paths
+// so that Nginx can handle the routing to the backend.
+const API_BASE_URL = (window.location.port === '3000' || window.location.hostname === 'localhost')
+  ? `http://${window.location.hostname}:8000`
+  : ''; // Relative path for production/reverse proxy setups
 
 const formatSessionType = (type: string) => {
   if (!type) return '';
