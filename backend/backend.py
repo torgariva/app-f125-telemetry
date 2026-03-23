@@ -381,7 +381,7 @@ def startup_event():
     init_db()
     threading.Thread(target=udp_listener, daemon=True).start()
 
-@app.get("/api/sessions/summary")
+@app.get("/sessions/summary")
 def get_sessions_summary():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -415,7 +415,7 @@ def get_sessions_summary():
         
     return result
 
-@app.get("/api/sessions/{track_id}")
+@app.get("/sessions/{track_id}")
 def get_sessions(track_id: str):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -436,7 +436,7 @@ def get_sessions(track_id: str):
         })
     return result
 
-@app.get("/api/sessions/single/{session_id}")
+@app.get("/sessions/single/{session_id}")
 def get_session(session_id: str):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -461,7 +461,7 @@ def get_session(session_id: str):
         }
     return {"error": "Session not found"}
 
-@app.get("/api/laps/{session_id}")
+@app.get("/laps/{session_id}")
 def get_laps(session_id: str):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -483,7 +483,7 @@ def get_laps(session_id: str):
         })
     return result
 
-@app.delete("/api/sessions/{session_id}")
+@app.delete("/sessions/{session_id}")
 def delete_session(session_id: str):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()

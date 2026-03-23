@@ -4,15 +4,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Activity, Timer, Settings, TrendingDown, BarChart3, ChevronLeft, MapPin, Flag, Calendar, Clock, CloudRain, Sun, Database, Trash2, Search } from 'lucide-react';
 
 // API Configuration
-// We detect if we are on localhost or a direct IP access to use port 8000.
-// If we are on a domain name (reverse proxy), we use relative paths.
-const isDirectAccess = window.location.port === '3000' || 
-                      window.location.hostname === 'localhost' || 
-                      /^\d+\.\d+\.\d+\.\d+$/.test(window.location.hostname);
-
-const API_BASE_URL = isDirectAccess 
-  ? `${window.location.protocol}//${window.location.hostname}:8000` 
-  : ''; // Relative path for Nginx reverse proxy setups
+// We use relative paths for the API. 
+// In development, Vite's proxy forwards /api to the backend.
+// In production, Nginx forwards /api to the backend.
+const API_BASE_URL = '';
 
 const formatSessionType = (type: string) => {
   if (!type) return '';

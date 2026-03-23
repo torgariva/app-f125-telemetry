@@ -10,13 +10,15 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Etapa de producción con un servidor estático ligero
-FROM node:20-alpine
-WORKDIR /app
-RUN npm install -g serve
-COPY --from=build /app/dist ./dist
+# Etapa de producción con Nginx
+FROM nginx:alpine
 
-EXPOSE 3000
+# Copiar configuración de Nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Iniciar el servidor SPA (-s) en el puerto 3000
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Copiar los archivos construidos de React
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

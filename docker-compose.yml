@@ -15,7 +15,8 @@ services:
     build: .
     container_name: f1_frontend
     ports:
-      - "3000:3000"           # Dashboard Web
+      - "80:80"             # Acceso HTTP estándar
+      - "3000:80"           # Mantener puerto 3000 por compatibilidad
     restart: unless-stopped
     depends_on:
       - backend
